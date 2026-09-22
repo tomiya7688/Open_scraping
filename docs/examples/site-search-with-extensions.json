@@ -1,0 +1,48 @@
+{
+  "schema_version": "0.2-draft",
+  "kind": "workflow",
+  "example_only": true,
+  "description": "コア設定に任意の入力支援・選別を追加する構成例。標準同梱する場合もコアの必須依存ではありません。IDと値は説明用です。",
+  "core_config_ref": "site-search.json",
+  "input_override": {
+    "text": "赤か白のTシャツを着た人物の写真を200枚。商品単体とイラストは不要。背景は問わない。",
+    "data_type": "image"
+  },
+  "extensions": {
+    "interpretation": {
+      "provider_id": "interpreter.local",
+      "enabled": true,
+      "priority": "auto_first",
+      "auto_apply_fields": ["query.mode", "query.terms", "query.source_parameters"],
+      "field_overrides": {}
+    },
+    "search_filters": [],
+    "post_filters": [
+      {
+        "instance_id": "image-quality-1",
+        "plugin_id": "builtin.image-quality",
+        "enabled": true,
+        "settings": {"min_width": 256, "min_height": 256}
+      },
+      {
+        "instance_id": "exact-duplicate-1",
+        "plugin_id": "builtin.exact-duplicate",
+        "enabled": true,
+        "settings": {"representative": "first_acquired"}
+      },
+      {
+        "instance_id": "image-relevance-1",
+        "plugin_id": "builtin.image-relevance",
+        "enabled": false,
+        "settings": {}
+      }
+    ],
+    "selection": {
+      "rule": "exclude_if_any_enabled_rule_excludes",
+      "unknown_action": "review",
+      "carry_manual_overrides": true,
+      "delete_excluded_files": false,
+      "auto_collect_more": false
+    }
+  }
+}

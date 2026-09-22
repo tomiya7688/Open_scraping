@@ -1,9 +1,10 @@
 {
-  "schema_version": "0.1-draft",
+  "schema_version": "0.2-draft",
+  "kind": "core_job",
   "example_only": true,
-  "description": "設計説明用。ドメイン、プラグインID、数値は仮であり、そのまま実行できる完成設定ではありません。取得間隔の数値はサイトの許可を意味しません。",
+  "description": "検索・取得のみの設計例。モデル・フィルター・選別設定は不要。ドメイン、ID、数値は説明用で、実行可能な完成設定や取得許可を示しません。",
   "input": {
-    "text": "赤か白のTシャツを着た人物の写真を200枚。商品単体とイラストは不要。背景は問わない。",
+    "text": "赤 白 Tシャツ 写真",
     "data_type": "image"
   },
   "scope": {
@@ -13,11 +14,7 @@
     "initial_links": {
       "mode": "allow_only",
       "entries": [
-        {
-          "host": "example.com",
-          "include_subdomains": true,
-          "enabled": true
-        }
+        {"host": "example.com", "include_subdomains": true, "enabled": true}
       ]
     },
     "follow_links": false
@@ -26,7 +23,6 @@
     {
       "id": "site.example",
       "name": "説明用のサイト定義",
-      "enabled": true,
       "adapter_id": "search.url-template",
       "settings": {
         "base_url": "https://example.com",
@@ -44,60 +40,17 @@
     "headless": false,
     "profile_ref": "profile:collection-default"
   },
-  "interpretation": {
-    "provider_id": "interpreter.local",
-    "priority": "manual_first",
-    "auto_apply_fields": ["query.structured", "query.variants"],
-    "field_overrides": {}
-  },
   "query": {
-    "structured": null,
-    "variants": []
+    "mode": "literal",
+    "terms": ["赤 白 Tシャツ 写真"],
+    "source_parameters": {}
   },
-  "search_filters": [],
-  "post_filters": [
-    {
-      "instance_id": "image-quality-1",
-      "plugin_id": "builtin.image-quality",
-      "enabled": true,
-      "settings": {
-        "min_width": 256,
-        "min_height": 256
-      }
-    },
-    {
-      "instance_id": "exact-duplicate-1",
-      "plugin_id": "builtin.exact-duplicate",
-      "enabled": true,
-      "settings": {
-        "representative": "first_acquired"
-      }
-    },
-    {
-      "instance_id": "image-relevance-1",
-      "plugin_id": "builtin.image-relevance",
-      "enabled": false,
-      "settings": {}
-    }
-  ],
-  "selection": {
-    "rule": "exclude_if_any_enabled_rule_excludes",
-    "unknown_action": "review",
-    "carry_manual_overrides": true,
-    "delete_excluded_files": false,
-    "auto_collect_more": false
-  },
-  "profile": {
-    "id": "balanced",
-    "modified": false
-  },
+  "profile": {"id": "balanced", "modified": false},
   "allocation": {
     "strategy": "equal",
     "levels": ["site", "engine"],
     "redistribute_unused": false,
-    "source_weights": {
-      "site.example": 1
-    }
+    "source_weights": {"site.example": 1}
   },
   "limits": {
     "target_metric": "downloaded_unique",
