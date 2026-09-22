@@ -1,94 +1,184 @@
 {
-  "schema_version": "0.2-draft",
-  "kind": "core_job",
+  "schema_version": "0.3-draft",
+  "kind": "flow",
+  "id": "site-image-collection",
   "example_only": true,
-  "description": "検索・取得のみの設計例。モデル・フィルター・選別設定は不要。ドメイン、ID、数値は説明用で、実行可能な完成設定や取得許可を示しません。",
-  "input": {
-    "text": "赤 白 Tシャツ 写真",
-    "data_type": "image"
+  "description": "部品を接続する設計例。実装ID・URL・数値は仮で、実行済み機能や取得許可を示しません。フィルターノードはありません。",
+  "inputs": {
+    "query": {
+      "terms": [
+        "Tシャツ"
+      ],
+      "data_type": "image"
+    }
   },
-  "scope": {
-    "mode": "site_native",
-    "targets": ["site.example"],
-    "engines": [],
-    "initial_links": {
-      "mode": "allow_only",
-      "entries": [
-        {"host": "example.com", "include_subdomains": true, "enabled": true}
-      ]
+  "components": {
+    "browser": {
+      "implementation": "example.browser-playwright",
+      "contract": "browser.session/v1",
+      "config": {
+        "engine": "chromium",
+        "mode": "managed",
+        "headless": false,
+        "profile_ref": "profile:collection-default",
+        "resource_keys": [
+          "network",
+          "source:example"
+        ]
+      }
     },
-    "follow_links": false
+    "search": {
+      "implementation": "example.site-search",
+      "contract": "search.provider/v1",
+      "bindings": {
+        "browser": "browser"
+      },
+      "config": {
+        "mode": "site_native",
+        "sources": [
+          {
+            "id": "site.example",
+            "search_url_template": "https://example.com/search?q={query}",
+            "results_selector": "article.result",
+            "page_link_selector": "a.title",
+            "next_selector": "a.next"
+          }
+        ],
+        "initial_links": {
+          "mode": "allow_only",
+          "hosts": [
+            {
+              "host": "example.com",
+              "include_subdomains": true
+            }
+          ]
+        },
+        "allocation": {
+          "strategy": "equal"
+        },
+        "max_pages": 20,
+        "max_candidates": 1000,
+        "resource_keys": [
+          "network",
+          "source:example"
+        ]
+      }
+    },
+    "download": {
+      "implementation": "example.asset-download",
+      "contract": "download.provider/v1",
+      "bindings": {
+        "browser": "browser"
+      },
+      "config": {
+        "data_type": "image",
+        "target_count": 200,
+        "max_transfer_bytes": 2147483648,
+        "max_single_file_bytes": 52428800,
+        "request_timeout_ms": 30000,
+        "max_retries": 2,
+        "follow_page_links": false,
+        "resource_keys": [
+          "network",
+          "source:example"
+        ],
+        "timing_scope": "dispatch_only"
+      }
+    },
+    "storage": {
+      "implementation": "example.local-dataset-store",
+      "contract": "dataset.store/v1",
+      "config": {
+        "workspace_ref": "workspace:default",
+        "retain_original": true,
+        "record_provenance": true
+      }
+    },
+    "export": {
+      "implementation": "example.files-manifest-export",
+      "contract": "dataset.export/v1",
+      "bindings": {
+        "storage": "storage"
+      },
+      "config": {
+        "format": "files-and-manifest",
+        "destination_ref": "output:default"
+      }
+    }
   },
-  "sources": [
+  "nodes": [
     {
-      "id": "site.example",
-      "name": "説明用のサイト定義",
-      "adapter_id": "search.url-template",
-      "settings": {
-        "base_url": "https://example.com",
-        "search_url_template": "https://example.com/search?q={query}",
-        "results_selector": "article.result",
-        "page_link_selector": "a.title",
-        "next_selector": "a.next"
+      "id": "search",
+      "component": "search",
+      "operation": "search",
+      "inputs": {
+        "query": {
+          "$ref": "flow.inputs.query"
+        }
+      }
+    },
+    {
+      "id": "download",
+      "component": "download",
+      "operation": "fetch",
+      "inputs": {
+        "candidates": {
+          "$ref": "nodes.search.outputs.candidates"
+        }
+      }
+    },
+    {
+      "id": "store",
+      "component": "storage",
+      "operation": "ingest",
+      "inputs": {
+        "batch": {
+          "$ref": "nodes.download.outputs.batch"
+        }
+      }
+    },
+    {
+      "id": "snapshot",
+      "component": "storage",
+      "operation": "snapshot",
+      "inputs": {
+        "collection": {
+          "$ref": "nodes.store.outputs.collection"
+        }
+      }
+    },
+    {
+      "id": "export",
+      "component": "export",
+      "operation": "export",
+      "inputs": {
+        "source": {
+          "$ref": "nodes.snapshot.outputs.snapshot"
+        }
       }
     }
   ],
-  "browser": {
-    "adapter_id": "browser.playwright",
-    "engine": "chromium",
-    "mode": "managed",
-    "headless": false,
-    "profile_ref": "profile:collection-default"
+  "execution": {
+    "max_parallel_nodes": 3,
+    "timeout_ms": 7200000,
+    "on_node_failure": "stop",
+    "resources": {
+      "network": {
+        "min_start_interval_ms": 1000,
+        "max_in_flight": 2
+      },
+      "source:example": {
+        "min_start_interval_ms": 5000,
+        "max_in_flight": 1
+      }
+    }
   },
-  "query": {
-    "mode": "literal",
-    "terms": ["赤 白 Tシャツ 写真"],
-    "source_parameters": {}
-  },
-  "profile": {"id": "balanced", "modified": false},
-  "allocation": {
-    "strategy": "equal",
-    "levels": ["site", "engine"],
-    "redistribute_unused": false,
-    "source_weights": {"site.example": 1}
-  },
-  "limits": {
-    "target_metric": "downloaded_unique",
-    "target_count": 200,
-    "max_search_requests": 100,
-    "max_page_visits": 500,
-    "max_elapsed_seconds": 7200,
-    "max_transfer_bytes": 2147483648,
-    "max_single_file_bytes": 52428800
-  },
-  "timing": {
-    "basis": "start_to_start",
-    "control_scope": "dispatch_only",
-    "search_min_interval_ms": 10000,
-    "page_min_interval_ms": 5000,
-    "image_min_interval_ms": 5000,
-    "global_max_concurrency": 2,
-    "per_source_max_concurrency": 1,
-    "per_origin_max_concurrency": 1,
-    "per_origin_overrides": [],
-    "on_rate_limit": "wait_or_hold",
-    "request_timeout_ms": 30000,
-    "max_retries": 2,
-    "retry_backoff_base_ms": 10000
-  },
-  "recovery": {
-    "mode": "manual",
-    "operation_timeout_ms": 30000,
-    "shutdown_grace_ms": 5000,
-    "max_auto_reloads": 0,
-    "max_auto_reopens": 0,
-    "resume_after_recovery": false,
-    "preserve_scheduler_state": true
-  },
-  "storage": {
-    "workspace_ref": "workspace:default",
-    "retain_original": true,
-    "retention_days": null,
-    "export_manifest": true
+  "outputs": {
+    "collection": {
+      "$ref": "nodes.snapshot.outputs.snapshot"
+    },
+    "export": {
+      "$ref": "nodes.export.outputs.export"
+    }
   }
 }

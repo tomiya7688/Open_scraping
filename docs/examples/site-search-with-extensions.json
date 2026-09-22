@@ -1,48 +1,272 @@
 {
-  "schema_version": "0.2-draft",
-  "kind": "workflow",
+  "schema_version": "0.3-draft",
+  "kind": "flow",
+  "id": "site-image-collection-with-selection",
   "example_only": true,
-  "description": "コア設定に任意の入力支援・選別を追加する構成例。標準同梱する場合もコアの必須依存ではありません。IDと値は説明用です。",
-  "core_config_ref": "site-search.json",
-  "input_override": {
-    "text": "赤か白のTシャツを着た人物の写真を200枚。商品単体とイラストは不要。背景は問わない。",
-    "data_type": "image"
+  "description": "同じFlowConfigに入力支援・解析・選別の部品を追加する設計例。コアの処理種別を追加する例ではありません。ID・設定・数値は仮です。",
+  "inputs": {
+    "text": "赤か白のTシャツを着た人物の写真を200枚。商品単体とイラストは不要。背景は問わない。"
   },
-  "extensions": {
-    "interpretation": {
-      "provider_id": "interpreter.local",
-      "enabled": true,
-      "priority": "auto_first",
-      "auto_apply_fields": ["query.mode", "query.terms", "query.source_parameters"],
-      "field_overrides": {}
-    },
-    "search_filters": [],
-    "post_filters": [
-      {
-        "instance_id": "image-quality-1",
-        "plugin_id": "builtin.image-quality",
-        "enabled": true,
-        "settings": {"min_width": 256, "min_height": 256}
-      },
-      {
-        "instance_id": "exact-duplicate-1",
-        "plugin_id": "builtin.exact-duplicate",
-        "enabled": true,
-        "settings": {"representative": "first_acquired"}
-      },
-      {
-        "instance_id": "image-relevance-1",
-        "plugin_id": "builtin.image-relevance",
-        "enabled": false,
-        "settings": {}
+  "components": {
+    "browser": {
+      "implementation": "example.browser-playwright",
+      "contract": "browser.session/v1",
+      "config": {
+        "engine": "chromium",
+        "mode": "managed",
+        "headless": false,
+        "profile_ref": "profile:collection-default",
+        "resource_keys": [
+          "network",
+          "source:example"
+        ]
       }
-    ],
+    },
+    "search": {
+      "implementation": "example.site-search",
+      "contract": "search.provider/v1",
+      "bindings": {
+        "browser": "browser"
+      },
+      "config": {
+        "mode": "site_native",
+        "sources": [
+          {
+            "id": "site.example",
+            "search_url_template": "https://example.com/search?q={query}",
+            "results_selector": "article.result",
+            "page_link_selector": "a.title",
+            "next_selector": "a.next"
+          }
+        ],
+        "initial_links": {
+          "mode": "allow_only",
+          "hosts": [
+            {
+              "host": "example.com",
+              "include_subdomains": true
+            }
+          ]
+        },
+        "allocation": {
+          "strategy": "equal"
+        },
+        "max_pages": 20,
+        "max_candidates": 1000,
+        "resource_keys": [
+          "network",
+          "source:example"
+        ]
+      }
+    },
+    "download": {
+      "implementation": "example.asset-download",
+      "contract": "download.provider/v1",
+      "bindings": {
+        "browser": "browser"
+      },
+      "config": {
+        "data_type": "image",
+        "target_count": 200,
+        "max_transfer_bytes": 2147483648,
+        "max_single_file_bytes": 52428800,
+        "request_timeout_ms": 30000,
+        "max_retries": 2,
+        "follow_page_links": false,
+        "resource_keys": [
+          "network",
+          "source:example"
+        ],
+        "timing_scope": "dispatch_only"
+      }
+    },
+    "storage": {
+      "implementation": "example.local-dataset-store",
+      "contract": "dataset.store/v1",
+      "config": {
+        "workspace_ref": "workspace:default",
+        "retain_original": true,
+        "record_provenance": true
+      }
+    },
+    "export": {
+      "implementation": "example.files-manifest-export",
+      "contract": "dataset.export/v1",
+      "bindings": {
+        "storage": "storage"
+      },
+      "config": {
+        "format": "files-and-manifest",
+        "destination_ref": "output:default"
+      }
+    },
+    "interpreter": {
+      "implementation": "example.local-query-interpreter",
+      "contract": "query.interpreter/v1",
+      "config": {
+        "priority": "auto_first",
+        "auto_apply_fields": [
+          "query.terms",
+          "intent"
+        ],
+        "external_requests": false
+      }
+    },
+    "analyzer": {
+      "implementation": "example.image-condition-analysis",
+      "contract": "data.process/v1",
+      "bindings": {
+        "storage": "storage"
+      },
+      "config": {
+        "cache_results": true,
+        "external_requests": false
+      }
+    },
+    "selector": {
+      "implementation": "example.image-selection",
+      "contract": "data.select/v1",
+      "bindings": {
+        "storage": "storage"
+      },
+      "config": {
+        "rules": [
+          {
+            "id": "min_dimensions",
+            "enabled": true,
+            "min_width": 256,
+            "min_height": 256
+          },
+          {
+            "id": "exact_duplicate",
+            "enabled": true,
+            "representative": "first_acquired"
+          },
+          {
+            "id": "condition_match",
+            "enabled": true
+          }
+        ],
+        "unknown_action": "review",
+        "delete_excluded_files": false
+      }
+    }
+  },
+  "nodes": [
+    {
+      "id": "interpret",
+      "component": "interpreter",
+      "operation": "interpret",
+      "inputs": {
+        "text": {
+          "$ref": "flow.inputs.text"
+        }
+      }
+    },
+    {
+      "id": "search",
+      "component": "search",
+      "operation": "search",
+      "inputs": {
+        "query": {
+          "$ref": "nodes.interpret.outputs.query"
+        }
+      }
+    },
+    {
+      "id": "download",
+      "component": "download",
+      "operation": "fetch",
+      "inputs": {
+        "candidates": {
+          "$ref": "nodes.search.outputs.candidates"
+        }
+      }
+    },
+    {
+      "id": "store",
+      "component": "storage",
+      "operation": "ingest",
+      "inputs": {
+        "batch": {
+          "$ref": "nodes.download.outputs.batch"
+        }
+      }
+    },
+    {
+      "id": "snapshot",
+      "component": "storage",
+      "operation": "snapshot",
+      "inputs": {
+        "collection": {
+          "$ref": "nodes.store.outputs.collection"
+        }
+      }
+    },
+    {
+      "id": "analyze",
+      "component": "analyzer",
+      "operation": "process",
+      "inputs": {
+        "source": {
+          "$ref": "nodes.snapshot.outputs.snapshot"
+        },
+        "intent": {
+          "$ref": "nodes.interpret.outputs.intent"
+        }
+      }
+    },
+    {
+      "id": "select",
+      "component": "selector",
+      "operation": "select",
+      "inputs": {
+        "source": {
+          "$ref": "nodes.snapshot.outputs.snapshot"
+        },
+        "analysis": {
+          "$ref": "nodes.analyze.outputs.result"
+        },
+        "intent": {
+          "$ref": "nodes.interpret.outputs.intent"
+        }
+      }
+    },
+    {
+      "id": "export",
+      "component": "export",
+      "operation": "export",
+      "inputs": {
+        "source": {
+          "$ref": "nodes.select.outputs.selection"
+        }
+      }
+    }
+  ],
+  "execution": {
+    "max_parallel_nodes": 3,
+    "timeout_ms": 7200000,
+    "on_node_failure": "stop",
+    "resources": {
+      "network": {
+        "min_start_interval_ms": 1000,
+        "max_in_flight": 2
+      },
+      "source:example": {
+        "min_start_interval_ms": 5000,
+        "max_in_flight": 1
+      }
+    }
+  },
+  "outputs": {
+    "collection": {
+      "$ref": "nodes.snapshot.outputs.snapshot"
+    },
+    "export": {
+      "$ref": "nodes.export.outputs.export"
+    },
     "selection": {
-      "rule": "exclude_if_any_enabled_rule_excludes",
-      "unknown_action": "review",
-      "carry_manual_overrides": true,
-      "delete_excluded_files": false,
-      "auto_collect_more": false
+      "$ref": "nodes.select.outputs.selection"
     }
   }
 }

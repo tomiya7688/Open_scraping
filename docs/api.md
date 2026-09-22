@@ -1,209 +1,166 @@
-# 公開API・プラグイン設計
+# 公開APIとフロー定義
 
 [設計書一覧](README.md)
 
-API名、設定キー、版、通信方式は実装案。改訂案の設定版を`0.2-draft`とする。実装済みAPIや正式JSON Schemaではない。
+改訂案：`0.3-draft`。名称・通信方式・スキーマは設計であり、実装済みAPIではない。
 
-## 1. コアAPIと追加機能API
+## 1. 統一した呼び出しモデル
 
-| 契約 | 責務 | 未導入時の扱い |
-| --- | --- | --- |
-| コアAPI | 検索・取得要求、実行制御、取得結果・出典、保存・基本出力 | 追加機能なしで利用できる |
-| 検索・取得アダプターAPI | 選択されたブラウザや検索・取得方式を実装する | 必要な接続方式がなければ、その取得要求の非対応を示す |
-| 追加機能API | 言語解釈、検索拡張、解析、選別、加工等を接続する | 未使用なら呼び出しも結果生成も不要 |
+**検索もブラウザもフィルターも保存も、全て部品の操作として呼ぶ。** コアAPIに検索・ダウンロード・選別の専用実装を置かない。
 
-追加機能APIはコアの公開データ・操作契約を利用する。コアが個別フィルターやモデルを必須importする構造にしない。標準UIと追加機能ホストも、内部の特権的な選別経路を使わない。
+GUIとCLIは同じ公開面を利用する。ホストが操作を配送し、コアがフローを実行し、部品が実処理を行う。HTTPを使う場合の入口は一つでも、責務と実装モジュールを分ける。
 
-公開APIは仕様の公開を意味する。初期案はローカルのループバックにバインドして認証し、任意のWebページから操作できないようOrigin等も検証する。外部ネットワークへの公開は別の配置設定。
+API公開は外部ネットワークへの無認証公開ではない。初期案はローカルの認証付きAPI。通信の認証、Origin、権限の検証はホスト／輸送層の責務とする。
 
-HTTP APIはOpenAPI、設定・入出力はJSON Schemaを使う案とし、版は実装時に固定する。[参考 S8・S9](references.md#s8)
+HTTPの記述にはOpenAPI、構造の検証にはJSON Schemaを使う案。採用版は実装時に固定する。[S8](references.md#s8) [S9](references.md#s9)
 
-## 2. 設定を二つに分ける
+## 2. コアは一種類のFlowConfigを扱う
 
-### 2.1 CoreJobConfig
+前版のCoreJobConfig／WorkflowConfigによる「取得はコア、選別は拡張」の区分を廃止し、部品を接続するFlowConfigへ統一する。
 
-検索・取得だけを記述する。以下の項目を使う設計とし、必須・省略時値の詳細は正式スキーマで確定する。
-
-| 項目 | 内容 |
+| 項目 | 意味 |
 | --- | --- |
-| `schema_version`, `kind` | 設定形式の版、`core_job` |
-| `input` | 入力文字列、データ種別 |
-| `scope` | サイト内／サイト指定／広域、対象サイト・エンジン、初期リンク条件 |
-| `sources` | サイト定義・取得方法・参照するアダプター |
-| `browser` | 接続部、ブラウザ、管理方式、表示・プロファイル |
-| `query` | 実行する検索語の配列、検索先固有の要求パラメーター |
-| `profile`, `allocation` | 展開済みの取得プロファイル、探索枠の配分 |
-| `limits` | 取得上の目標件数、要求数・容量等の上限 |
-| `timing`, `recovery` | 取得間隔、同時数、復旧・停止 |
-| `storage` | 保存先、保存期限、出典マニフェスト |
+| `schema_version`, `kind` | 構造の版と`flow` |
+| `id` | フローの識別子 |
+| `inputs` | 外部入力。中身の意味は部品側スキーマで定義 |
+| `components` | ローカル名から実装ID・契約・設定・依存束縛への対応 |
+| `nodes` | 呼ぶ部品、操作名、入力参照、実行ポリシー |
+| `execution` | 汎用の並列数、待機資源、期限、失敗時の扱い |
+| `outputs` | フローの結果として公開するノード出力参照 |
 
-`query.mode`の案は`literal`と`prepared`。前者は文字列を直接使い、後者はユーザーまたは入力支援が準備した検索語を使う。コアは自然文を解釈したと仮定しない。
+部品設定は`components.<name>.config`に置く。ブラウザ名、検索エンジン、サイトのCSS、画像条件をコアのトップレベル設定として増やさない。
 
-**`interpretation`、`search_filters`、`post_filters`、`selection`をCoreJobConfigの必須項目にしない。これらは追加機能側の設定とし、コアAPIには渡さない。**
+`components`の各要素は`implementation`、`contract`、`config`、必要なら`bindings`を持つ。標準同梱でも同じ定義で束縛する。`bindings`は別の登録部品のローカル名を指す。
 
-[コアだけの設定例](examples/site-search.json)はそれらのキーを持たない。この例の数値・ドメイン・アダプターIDは説明用で、実行可能性や取得許可を示さない。
+`nodes`は`id`、`component`、`operation`、`inputs`、任意の`policy`を持つ。依存関係は入力参照から導く。初期案は非循環のフローとし、無限ループは許さない。ページ送りや条件付き追加取得は部品の宣言する有限処理または回数上限付きサブフローとして後から定義する。
 
-### 2.2 WorkflowConfig
+フィルター未使用なら、そのノードを置かない。常に通過するダミー選別を挿入しない。実処理部品ゼロでもコアの起動や空フローの検証は可能だが、検索するノードがあれば対応部品を要求する。
 
-追加機能ホストが読む構成。`kind: workflow`、参照するコア設定、任意の入力差分、`extensions`を持つ。
+## 3. 参照・スキーマ・有効設定
 
-| 拡張設定 | 内容 |
+参照形式の案：
+
+```json
+{"$ref": "flow.inputs.request"}
+```
+
+```json
+{"$ref": "nodes.search.outputs.candidates"}
+```
+
+前者は入力、後者は完了済みノードの出力である。`$ref`はこのフローDSL内の値参照で、JSON Schemaの参照や任意コードの評価ではない。参照先存在、循環、型識別子・版・宣言スキーマとの適合を検証する。
+
+検索の出力`candidates`、取得の`batch`、保存の`collection`などのポートは部品契約が宣言する。コアにその名前による特別分岐を設けない。
+
+実行時には実装・契約・設定・モデル・上流版の解決結果を固定する。未対応設定、不足操作、依存不足を事前に示す。勝手な実装追加・代替・無視をしない。
+
+GUIがフィルターのチェックを外す操作は、宣言された編集ルールでノードを除いたフロー案を作る。入力型が変わり接続できなければ再接続を求める。外したフィルターを裏で動かさない。
+
+部品の設定スキーマ、表示用ラベル、選択肢をUIが描画する。モデルによる設定提案やプロファイル展開は部品を呼び、差分を表示する。GUIでそれらの実処理を行わない。
+
+## 4. 公開APIの配置案
+
+### 4.1 フロー実行コア
+
+| 操作 | 内容 |
 | --- | --- |
-| `interpretation` | 言語モデル、手動／自動優先、自動適用範囲 |
-| `search_filters` | 検索語変換・候補選別等の追加処理 |
-| `post_filters` | 取得後に使う解析・選別モジュール |
-| `selection` | 結果の組合せ、未判定、手動訂正の扱い |
+| `POST /api/v0/flows/validate` | 構造・参照・必要契約の検証 |
+| `POST /api/v0/flows` | フローの登録 |
+| `GET /api/v0/flows/{id}` | 定義・版の取得 |
+| `PATCH /api/v0/flows/{id}` | 期待する版を指定して更新 |
+| `POST /api/v0/runs` | フロー版と入力を固定して実行を作成 |
+| `POST /api/v0/runs/{id}/start` | 実行開始 |
+| `POST /api/v0/runs/{id}/stop` | 新規投入停止と中断要求 |
+| `POST /api/v0/runs/{id}/resume` | チェックポイントからの再開要求 |
+| `PATCH /api/v0/runs/{id}/execution` | 未開始処理に適用する実行ポリシー更新 |
+| `GET /api/v0/runs/{id}` | 実行・各ノードの状態 |
+| `GET /api/v0/runs/{id}/events` | 順序付きの実行イベント |
+| `GET /api/v0/runs/{id}/outputs` | 完了ノードが公開した参照・値 |
 
-各拡張設定は省略可能。`extensions`省略または空は、参照したコア設定をそのまま実行する構成である。空の場合に標準フィルターを自動挿入しない。
+### 4.2 コンポーネントホスト
 
-`core_config_ref`はホストが解決するファイル／登録設定への参照であり、コアへ任意URLの読取を指示するものではない。説明例の`input_override`は元入力の変更であり、検索語への変換は解釈支援が行う。解釈不能ならその事実を表示する。
-
-[追加機能を使う設定例](examples/site-search-with-extensions.json)で両者の差を示す。標準配布のプリセットはホスト側の構成であり、コアの既定依存ではない。
-
-### 2.3 省略・未解決・移行
-
-未指定、空、無効、エラーを別にする。空の初期リンク許可リストを全許可にしない。コアの不明キーは黙って無視せず検証で示す。
-
-拡張を使用すると指定したのに実装がなければ、そのワークフローの依存不足として開始前に通知する。フィルターを使わないCoreJobConfigまで無効にしない。自動導入・代替判定・暗黙スキップはしない。
-
-旧`0.1-draft`の混在設定はホスト側でコア設定と追加機能設定へ分ける移行案とし、差分を表示する。過去の自然文解釈や有効フィルターを黙って変更しない。
-
-## 3. 優先順位・版
-
-入力支援は`manual_first`、`auto_first`、`per_field`を持つ。モデルの自動適用可能なフィールドはユーザー設定で、モデル自身が変更しない。元入力、提案、採用値、値の出所を記録する。
-
-ホストは解釈・検索拡張を使った場合でも、最終的なCoreJobConfigを可視化して渡す。ユーザーが指定した検索先と、実際の検索先を一致させる。
-
-プロファイルは詳細値に展開し、差分を示す。`requested`と`effective`を分け、非対応条件を適用済みとしない。
-
-コアの`config_revision`と`runtime_revision`、追加機能の`workflow_revision`・`selection_revision`を分離する。コアは選別版の採否を解釈しない。
-
-## 4. コア操作APIの草案
-
-| メソッド・パス | 処理 |
+| 操作 | 内容 |
 | --- | --- |
-| `GET /api/v0/capabilities` | 実装済みのコア機能・データ種別・接続部の能力 |
-| `GET /api/v0/sources` | サイト・エンジン定義の一覧 |
-| `POST /api/v0/sources` | 検索先の追加 |
-| `PATCH /api/v0/sources/{id}` | 検索先の編集 |
-| `DELETE /api/v0/sources/{id}` | 今後の検索先から取り外す。履歴は残す |
-| `POST /api/v0/configs/validate` | CoreJobConfigの検証 |
-| `POST /api/v0/jobs` | 取得ジョブを作成。自動開始しない |
-| `GET /api/v0/jobs/{id}` | 取得状態、設定版、進捗、待機理由 |
-| `PATCH /api/v0/jobs/{id}/config` | 編集可能な状態で取得設定版を作成 |
-| `POST /api/v0/jobs/{id}/start` | 取得を開始 |
-| `POST /api/v0/jobs/{id}/stop` | 取得の停止要求 |
-| `POST /api/v0/jobs/{id}/resume` | 保存記録から再開 |
-| `PATCH /api/v0/jobs/{id}/runtime` | 間隔などの実行制御更新 |
-| `POST /api/v0/jobs/{id}/browser/reload` | 指定ページ再読み込み |
-| `POST /api/v0/jobs/{id}/browser/reopen` | 指定管理セッション開き直し |
-| `GET /api/v0/jobs/{id}/events` | 順序付き取得イベント |
-| `GET /api/v0/jobs/{id}/items` | 取得データ一覧。選別結果を要求しない |
-| `POST /api/v0/jobs/{id}/snapshots` | 取得済み項目ID集合を固定する |
-| `POST /api/v0/jobs/{id}/exports` | 取得スナップショットから直接出力する |
-| `GET /api/v0/operations/{id}` | コアの長時間操作の進捗・結果 |
+| `GET /api/v0/components` | 登録実装・版・利用可否 |
+| `POST /api/v0/components` | 明示的な登録・導入 |
+| `DELETE /api/v0/components/{id}` | 使用状況を確認した取り外し |
+| `GET /api/v0/components/{id}/manifest` | 操作・設定・入出力・依存・権限 |
+| `POST /api/v0/components/{id}/validate` | 部品固有の設定検証 |
+| `POST /api/v0/components/{id}/invoke` | 対象部品への明示操作要求 |
+| `POST /api/v0/operations/{id}/cancel` | 単一操作の中断要求 |
+| `GET /api/v0/operations/{id}` | 操作の受理・進捗・完了 |
 
-出力要求例：
+直接invokeする操作も所有者・run・資源・中断の管理を通す。GUIの復旧操作やプレビューが、実行中ジョブの順序や待機制御を飛び越えない。対象runのない単発操作も、ホストが単独の実行スコープを割り当てる。
+
+旧案の`/jobs/{id}/browser/reload`、`/jobs/{id}/exports`、`/extensions/selections`等は、コア固有の責務として採用しない。互換APIを将来付ける場合も、部品操作へ変換する別アダプターにする。
+
+## 5. GUI操作の例
+
+再読み込みボタンは、ブラウザ部品への次のような要求を送る。
 
 ```json
 {
-  "collection_snapshot_id": "snapshot-example-001",
-  "format": "files-and-manifest"
+  "operation": "reload",
+  "run_id": "run-example",
+  "inputs": {"session_ref": "session-example", "page_ref": "page-example"},
+  "idempotency_key": "reload-example-001"
 }
 ```
 
-**選別版ID、解析結果、フィルターの実行は不要。** スナップショットの項目は取得成功として記録されたものであり、内容の評価に合格したことを意味しない。
+処理の受理だけで「再読み込み成功」と表示しない。コア／ホストは操作状態を通知し、部品が実際に完了した結果を返す。
 
-0.xの未実装機能は`not_implemented`等で返す。空の成功で隠さない。API版と製品版は独立に管理する。
+検索、ダウンロード、数表処理、保存一覧、出力も同じ配送方式で部品へ要求する。GUIがブラウザSDK、HTTPダウンローダー、モデルSDKを直接importしない。
 
-## 5. 追加機能ホストAPIの草案
+## 6. 部品の共通メッセージ
 
-以下はコアAPIと同じ配布物に載せることもできるが、別モジュールである。未導入ならその能力を宣言せず、コアの起動要件にしない。
+呼び出しコンテキストにrun、node、operation、設定版、期限、中断トークン、入力参照、依存ハンドル、進捗先を持たせる。
 
-| メソッド・パス | 処理 |
-| --- | --- |
-| `GET /api/v0/extensions/capabilities` | 追加機能の能力 |
-| `GET /api/v0/extensions/plugins` | 追加プラグイン一覧 |
-| `POST /api/v0/extensions/plugins` | 明示的な許可による追加 |
-| `PATCH /api/v0/extensions/plugins/{id}` | 有効状態等の変更 |
-| `DELETE /api/v0/extensions/plugins/{id}` | 取り外し。取得データ・過去の結果は消さない |
-| `POST /api/v0/extensions/interpretations` | 入力解釈・検索計画案 |
-| `POST /api/v0/extensions/workflows` | WorkflowConfigを検証して作成 |
-| `POST /api/v0/extensions/workflows/{id}/start` | 選択した追加処理と取得を実行 |
-| `POST /api/v0/extensions/workflows/{id}/stop` | 関連する取得・拡張処理へ停止を送る |
-| `GET /api/v0/extensions/workflows/{id}` | コアと追加処理それぞれの状態 |
-| `POST /api/v0/extensions/selections` | 保存データへの解析・選別 |
-| `POST /api/v0/extensions/selections/{id}/overrides` | 手動採用・除外・保留 |
-| `POST /api/v0/extensions/exports` | 選別版を使用する出力 |
-| `GET /api/v0/extensions/operations/{id}` | 拡張処理の進捗・結果 |
-
-旧案の選別・解釈エンドポイントを、コアの必須APIから分離した。追加機能ホストは、コアの公開APIでデータとスナップショットを読む。コアの取得状態を選別の成否で上書きしない。
-
-## 6. 長時間操作・実行制御
-
-開始、復旧、出力等は受理時に`operation_id`を返し、完了は別通知とする。HTTP受理をブラウザ復旧成功と混同しない。
-
-再送可能操作は`idempotency_key`を持ち、同一要求を重複実行しない。異なる内容でキーを再利用したら競合を返す。更新には期待する設定版を付ける。
-
-`request_id`、イベントの順序番号、中断トークン、期限を共通化する。停止は復旧より優先。詳細は[runtime.md](runtime.md)を参照。
-
-## 7. 部品の契約
-
-| 種類 | 配置 | 契約案 |
-| --- | --- | --- |
-| `browser` | 検索・取得接続部 | capabilities, open, navigate, reload, close, reopen, cancel |
-| `search` | 検索接続部 | validate, search, next, cancel |
-| `extractor` | 取得・形式抽出接続部 | extract, checkpoint, cancel |
-| `interpreter` | 追加入力支援 | interpret, expand_queries, cancel |
-| `analyzer` | 追加解析 | analyze, cancel |
-| `filter` | 追加選別 | evaluate, cancel |
-| `exporter` | 必要に応じて追加する出力形式 | export, cancel |
-
-基本のファイル・マニフェスト出力はフィルターなしで提供する。追加形式のexporterを導入しなくても、取得済みデータを取り出せる。
-
-マニフェストはID、版、API互換範囲、種類、対応データ型、設定スキーマ、依存関係、必要権限、既知の限界を持つ。標準・外部の実装で同じ契約を使う。
-
-ブラウザは再起動等の管理能力と要求間隔の制御範囲を宣言する。検索先はサイト内検索、画像結果、ページ送り、言語・期間等の対応を宣言する。フィルターは精度・未検証範囲・スコアの意味を宣言する。
-
-入出力はシリアライズ可能とし、ブラウザの内部オブジェクトを他の実装へ直接渡さない。大きな本体データや認証情報はログのJSONに埋め込まず、限定した参照・秘密情報ハンドルで渡す。
-
-## 8. フィルター実行時だけ生じる結果
-
-解析は特徴・スコアを計算し、選別は条件に従う選択案を作る。`query_transform`、`candidate_filter`、`post_analysis`、`selection`等の段階を追加機能側で区別する。
+結果の共通部分は実行の成否、出力ポート、エラー、進捗、チェックポイント。内容の判定値は部品固有出力とする。
 
 ```json
 {
-  "subject_id": "item-example-001",
-  "status": "ok",
-  "values": {"condition_similarity": 0.42},
-  "suggestion": "exclude",
-  "reason_codes": ["below_user_threshold"],
-  "plugin_id": "builtin.image-relevance",
-  "plugin_version": "0.1.0-draft",
-  "settings_revision": 3
+  "operation_id": "op-example",
+  "status": "succeeded",
+  "outputs": {
+    "batch": {
+      "type": "scraping.item-batch/v1",
+      "provider": "download",
+      "ref": "batch-example",
+      "revision": "1"
+    }
+  },
+  "checkpoint_ref": "checkpoint-example"
 }
 ```
 
-これは説明用で、実測値ではない。`status`の`ok`、`unknown`、`unsupported`、`error`と、`suggestion`の`keep`、`exclude`、`review`を分ける。解析失敗を内容の不一致に変えない。
+例は実測結果ではない。コアは`type`識別子や参照の整合性を扱うが、画像の中身を読まない。大きなデータは本体をJSONへ埋めず、部品が管理するDataRefを渡す。DataRefの読取方法・寿命・権限は公開契約で定義する。
 
-未導入・未使用なら結果そのものを作らない。評価を実行したが不明だった状態と、評価していない状態を混同しない。スコアを確率として保証せず、別モデルの数値を直接同一視しない。
+`accepted`、`running`、`succeeded`、`failed`、`cancelled`を内容上の採否と分ける。フィルター操作が成功して結果が「除外」である場合も、処理エラーではない。未使用なら結果を生成しない。
 
-フィルター順序、AND／OR、未判定の扱い、手動訂正は追加機能側の設定。未判定を保留にする案も、そのフィルターを使用した場合のルールに限る。
+## 7. 共通実行規則
 
-## 9. 権限・取り外し・障害
+同じidempotency keyと同じ要求の再送は同一操作として扱い、異なる内容なら競合。設定更新には期待する版を付ける。外部サイトの副作用までexactly-onceにできるとは保証しない。
 
-プラグインの外部通信、保存先、モデル送信、秘密情報参照を表示する。別プロセスにする案だが、それだけでOS権限が完全に隔離されたとは言わない。具体的方式はOS選定後に決める。
+長時間操作はoperation IDを返して進捗を別通知する。停止・復旧の詳細は[runtime.md](runtime.md)。管理できないリモート処理はキャンセル未確認として示す。
 
-対応アダプターはコアのスケジューラーを通す。任意の外部コードのすべての通信まで保証するとは表示しない。外部ページのテキストを設定命令として実行せず、モデル出力も形式と権限の範囲を検証する。
+部品が別部品を使う場合、宣言したbindingをホスト経由で呼ぶ。サブ呼び出しのrunと資源・予算を共有する。コアにベンダー別の復旧コードを置かない。
 
-取り外し時は使用中の拡張処理の終了・停止を扱う。コアまで再インストールを要求せず、選別テーブルの存在をコア起動条件にしない。過去の結果は参照でき、同じモデルがなければ再計算できないことを示す。
+同一runの出力参照には生成操作と版を付ける。再開・ブラウザ再起動後に古い操作結果を混ぜない。ノードを再試行するときは、完了済み副作用を部品が確認できる契約を使う。
 
-追加機能が失敗してもコアの取得結果・出典・基本出力を維持する。選択済みの検索前拡張が失敗した場合は、そのワークフローで確認待ちにする。指示を黙って捨てて取得を続けることとは区別する。
+## 8. フィルターとデータ処理
 
-## 10. エラー・互換性
+入力型・出力型・設定が合う任意の部品として接続する。分析と選別は別操作にでき、保存済みスコアの閾値だけを変えた場合は再解析を省ける。キャッシュ可否やキーは部品が公開する。
 
-コアのエラー例は`invalid_config`、`unsupported_capability`、`not_implemented`、`authentication_required`、`rate_limited`、`browser_unresponsive`、`parse_failed`、`cancelled`。拡張は`extension_missing`、`extension_failed`等を別の処理結果として扱う。
+「ゴミ」「関連度」「重複」などの意味をコアに書かない。フィルターの順序やAND／ORの内容上の論理は選別部品へ渡す。コアの分岐は、その部品が出した値を宣言済み規則で配送するだけである。
 
-再試行可否、待機期限、影響範囲を付ける。未使用拡張の不足をコアのエラーにしない。製品、設定、API、プラグイン、モデルの版を独立に記録する。
+検索前フィルターをユーザーが接続したフローで、その処理が失敗した場合、無断でフィルターなし検索を始めない。失敗時の規則を明示する。後処理の失敗は既に保存したデータを消す理由にしない。
 
-0.xの破壊的変更は明記する。1.0.0前に互換範囲・移行・廃止予定の通知を決める。取得中の接続部と、取得に不要な後処理フィルターの取り外しを同じ扱いにしない。
+## 9. パッケージ・版・移行
+
+標準部品も別実装も同じマニフェストを使い、`builtin`という名称による特権を設けない。実行はIDと版に束縛し、互換能力を確認する。
+
+製品版、フロー版、コアAPI版、部品契約版、部品実装版、モデル版、保存形式版を別管理する。1.1.0の動画対応は新しい部品契約・型を登録することで追加できるようにする。
+
+0.2-draftからは、検索・ブラウザ・保存設定をcomponentsへ、取得順序をnodesへ移す。旧extensionsも同じnodesに展開する。元の条件・優先順位・未使用状態を維持し、移行差分をユーザーに見せる。正式な移行コードは未実装。
+
+例ファイルはフロー接続の説明用で、正式スキーマとランタイムの存在を意味しない。

@@ -2,81 +2,95 @@
 
 [設計書一覧](README.md)
 
-確認日：2026-09-22。外部技術の性質について参照した一次資料を示す。これらの参照は、特定の実装・バージョン・サービスの採用や、検索成功の保証を意味しない。実装時には利用する版と提供状況を再確認する。
+一次資料の参照先。特定の採用版・実装済み機能・検索成功を保証するものではない。S1・S5・S12・S13は今回の改訂時（2026-09-22）に再確認し、他は既存の設計上の参照先を維持した。採用時に実際に使用する版と利用条件を確認する。
 
 <a id="s1"></a>
-## S1. Playwrightのブラウザ対応
+## S1. ブラウザ制御の候補
 
 [Browsers — Playwright](https://playwright.dev/docs/browsers)
 
-Chromium・Firefox等の管理対象ブラウザと、通常配布版Firefoxとの違いを確認するための資料。初期ブラウザ接続部の候補であり、本プロジェクトでは検索成功の動作保証をしない。
+対応ブラウザ版の管理と、Firefoxが専用パッチを使うことの参考。依存するのはブラウザ部品であり、コアではない。
 
 <a id="s2"></a>
-## S2. ページの再読み込み
+## S2. 再読み込み
 
 [Page.reload — Playwright](https://playwright.dev/docs/api/class-page#page-reload)
 
-ページ再読み込み、タイムアウト、完了条件のAPI。設計書のジョブ保存・再開までをこのAPI単独で実現できるという意味ではない。
+ページ操作・完了条件・タイムアウトの参考。ジョブ再開や保存整合性までこの操作単独で保証するものではない。
 
 <a id="s3"></a>
-## S3. ブラウザの終了・接続
+## S3. ブラウザ終了・接続
 
 [Browser — Playwright](https://playwright.dev/docs/api/class-browser)
 
-起動したブラウザと接続したブラウザの終了動作、コンテキスト終了、切断イベント等。管理ブラウザと利用者の通常ブラウザを区別する際の参考。
+ブラウザ部品が管理する終了・切断・接続の参考。通常利用の環境と本体が所有する環境を分ける。
 
 <a id="s4"></a>
-## S4. ブラウザの通信
+## S4. 通信制御
 
 [Network — Playwright](https://playwright.dev/docs/network)
 
-要求監視・ルーティングと、その制約の確認資料。ファイル保存間隔とブラウザのすべての通信の制御を区別する。
+要求監視・ルーティングと制約。保存間隔と付随通信制御を区別するための資料。
 
 <a id="s5"></a>
-## S5. 追加検索接続先の候補
+## S5. 検索部品の基盤候補
 
 [Search API — SearXNG](https://docs.searxng.org/dev/search_api.html)
 
-検索APIの仕様。出力形式等はインスタンスの設定にも依存する。SearXNGは候補アダプターであり、必須依存ではない。
+共通契約へ接続する検索API候補。出力形式はインスタンス設定にも依存する。SearXNGをコアや全配布構成の必須依存にしない。
 
 <a id="s6"></a>
-## S6. Retry-After
+## S6. 待機指定
 
 [RFC 9110, Section 10.2.3](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.2.3)
 
-待機指定の秒数・HTTP日付の形式を確認する資料。本体の間隔設定・復旧操作と、相手側から指定された待機を併用する設計の参考。
+Retry-Afterの秒数・HTTP日付。通信部品が共通の待機時刻に変換する設計の参考。
 
 <a id="s7"></a>
-## S7. 429応答
+## S7. 過剰な要求への応答
 
 [RFC 6585, Section 4](https://www.rfc-editor.org/rfc/rfc6585.html#section-4)
 
-Too Many RequestsとRetry-Afterの関係を確認する資料。すべてのサイトが同じ単位でアクセス回数を数えるとは仮定しない。
+HTTP 429とRetry-After。サイトごとに要求を数える単位が同一とは仮定しない。
 
 <a id="s8"></a>
-## S8. 操作APIの記述
+## S8. APIの記述
 
 [OpenAPI Specification](https://spec.openapis.org/oas/latest.html)
 
-HTTP APIを記述する仕様。採用する版は実装時に固定する。本リポジトリのAPI一覧は現時点で草案であり、OpenAPI形式の実装済み定義ではない。
+HTTP APIの形式候補。現在の設計書のAPI表は正式なOpenAPI定義ではない。
 
 <a id="s9"></a>
-## S9. 設定・入出力の検証
+## S9. 構造検証
 
 [JSON Schema: object](https://json-schema.org/understanding-json-schema/reference/object)
 
-構造化設定とプラグインの入出力検証に用いる候補。設定例は説明用JSONであり、正式な検証スキーマの公開を代替しない。
+設定・マニフェスト・入出力の検証候補。FlowConfigの値参照とJSON Schemaの参照を区別する。
 
 <a id="s10"></a>
-## S10. ローカルの管理情報保存
+## S10. 保存方式候補
 
 [Appropriate Uses For SQLite](https://www.sqlite.org/whentouse.html)
 
-ローカルアプリ等への適用範囲と、書き込み並行性に関する資料。SQLite＋ファイル保存は実装候補であり、採用は未確定。
+ローカル保存への適用範囲・並行性。データセット保存部品とコアの実行状態ストアは責務を分離する。
 
 <a id="s11"></a>
-## S11. 出典・加工履歴
+## S11. 来歴
 
 [PROV-Overview — W3C](https://www.w3.org/TR/prov-overview/)
 
-データと生成・加工の過程の来歴を表す考え方の参考。本設計でPROV全体への準拠を要求するものではない。
+データと生成・加工・関与主体の来歴。完全準拠するかは未決定。
+
+<a id="s12"></a>
+## S12. OSSブラウザ
+
+[Chromium](https://www.chromium.org/Home/)
+
+内製ブラウザ部品の基盤候補。既存エンジンをAPIで操作する実装を検討する。
+
+<a id="s13"></a>
+## S13. ライセンスの確認資料
+
+[MPL 2.0 FAQ — Mozilla](https://www.mozilla.org/en-US/MPL/2.0/FAQ/)
+
+利用・改変・配布を区別して確認する資料。商用／非商用だけで、すべての依存コードの条件を一括して決めない。本体ライセンスの選定や具体的な再配布許諾をこの文書で行うものではない。
