@@ -1,0 +1,141 @@
+{
+  "schema_version": "0.1-draft",
+  "example_only": true,
+  "description": "設計説明用。ドメイン、プラグインID、数値は仮であり、そのまま実行できる完成設定ではありません。取得間隔の数値はサイトの許可を意味しません。",
+  "input": {
+    "text": "赤か白のTシャツを着た人物の写真を200枚。商品単体とイラストは不要。背景は問わない。",
+    "data_type": "image"
+  },
+  "scope": {
+    "mode": "site_native",
+    "targets": ["site.example"],
+    "engines": [],
+    "initial_links": {
+      "mode": "allow_only",
+      "entries": [
+        {
+          "host": "example.com",
+          "include_subdomains": true,
+          "enabled": true
+        }
+      ]
+    },
+    "follow_links": false
+  },
+  "sources": [
+    {
+      "id": "site.example",
+      "name": "説明用のサイト定義",
+      "enabled": true,
+      "adapter_id": "search.url-template",
+      "settings": {
+        "base_url": "https://example.com",
+        "search_url_template": "https://example.com/search?q={query}",
+        "results_selector": "article.result",
+        "page_link_selector": "a.title",
+        "next_selector": "a.next"
+      }
+    }
+  ],
+  "browser": {
+    "adapter_id": "browser.playwright",
+    "engine": "chromium",
+    "mode": "managed",
+    "headless": false,
+    "profile_ref": "profile:collection-default"
+  },
+  "interpretation": {
+    "provider_id": "interpreter.local",
+    "priority": "manual_first",
+    "auto_apply_fields": ["query.structured", "query.variants"],
+    "field_overrides": {}
+  },
+  "query": {
+    "structured": null,
+    "variants": []
+  },
+  "search_filters": [],
+  "post_filters": [
+    {
+      "instance_id": "image-quality-1",
+      "plugin_id": "builtin.image-quality",
+      "enabled": true,
+      "settings": {
+        "min_width": 256,
+        "min_height": 256
+      }
+    },
+    {
+      "instance_id": "exact-duplicate-1",
+      "plugin_id": "builtin.exact-duplicate",
+      "enabled": true,
+      "settings": {
+        "representative": "first_acquired"
+      }
+    },
+    {
+      "instance_id": "image-relevance-1",
+      "plugin_id": "builtin.image-relevance",
+      "enabled": false,
+      "settings": {}
+    }
+  ],
+  "selection": {
+    "rule": "exclude_if_any_enabled_rule_excludes",
+    "unknown_action": "review",
+    "carry_manual_overrides": true,
+    "delete_excluded_files": false,
+    "auto_collect_more": false
+  },
+  "profile": {
+    "id": "balanced",
+    "modified": false
+  },
+  "allocation": {
+    "strategy": "equal",
+    "levels": ["site", "engine"],
+    "redistribute_unused": false,
+    "source_weights": {
+      "site.example": 1
+    }
+  },
+  "limits": {
+    "target_metric": "downloaded_unique",
+    "target_count": 200,
+    "max_search_requests": 100,
+    "max_page_visits": 500,
+    "max_elapsed_seconds": 7200,
+    "max_transfer_bytes": 2147483648,
+    "max_single_file_bytes": 52428800
+  },
+  "timing": {
+    "basis": "start_to_start",
+    "control_scope": "dispatch_only",
+    "search_min_interval_ms": 10000,
+    "page_min_interval_ms": 5000,
+    "image_min_interval_ms": 5000,
+    "global_max_concurrency": 2,
+    "per_source_max_concurrency": 1,
+    "per_origin_max_concurrency": 1,
+    "per_origin_overrides": [],
+    "on_rate_limit": "wait_or_hold",
+    "request_timeout_ms": 30000,
+    "max_retries": 2,
+    "retry_backoff_base_ms": 10000
+  },
+  "recovery": {
+    "mode": "manual",
+    "operation_timeout_ms": 30000,
+    "shutdown_grace_ms": 5000,
+    "max_auto_reloads": 0,
+    "max_auto_reopens": 0,
+    "resume_after_recovery": false,
+    "preserve_scheduler_state": true
+  },
+  "storage": {
+    "workspace_ref": "workspace:default",
+    "retain_original": true,
+    "retention_days": null,
+    "export_manifest": true
+  }
+}
