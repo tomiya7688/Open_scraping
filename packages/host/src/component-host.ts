@@ -326,7 +326,7 @@ export class RunComponentInvoker implements FlowInvoker {
   readonly #snapshot: ComponentBindingSnapshot;
   readonly #runId: string;
   readonly #budgetScopeId: string;
-  readonly #onEvent?: (event: HostOperationEvent) => void;
+  readonly #onEvent: ((event: HostOperationEvent) => void) | undefined;
   readonly #hostOptions: ComponentWorkerHostOptions;
   readonly #active = new Map<string, ActiveOperation>();
   readonly #idempotency = new Map<string, IdempotencyRecord>();
