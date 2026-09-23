@@ -44,8 +44,17 @@ function schemaDiagnostics(
   }));
 }
 
+type SchemaValidator = {
+  (value: unknown): boolean;
+  errors?: readonly {
+    instancePath?: string;
+    keyword?: string;
+    message?: string;
+  }[] | null;
+};
+
 function validateBySchema<T>(
-  validator: typeof validateFlowSchema,
+  validator: SchemaValidator,
   value: unknown,
   code = "SCHEMA_INVALID"
 ): ValidationResult<T> {
