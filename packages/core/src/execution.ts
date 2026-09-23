@@ -429,8 +429,6 @@ export class FlowRun {
       this.#now() + this.#plan.flow.execution.timeout_ms;
 
     while (pending.size > 0 || this.#active.size > 0) {
-      this.#markBlockedNodes(pending);
-
       if (this.#stopRequested) {
         if (this.#active.size > 0) {
           await Promise.race(this.#active.values());
@@ -438,6 +436,8 @@ export class FlowRun {
         }
         break;
       }
+
+      this.#markBlockedNodes(pending);
 
       if (this.#now() >= deadlineMs) {
         await this.#initiateStop("run_timeout");
