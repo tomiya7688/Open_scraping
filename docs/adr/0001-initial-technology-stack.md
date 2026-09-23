@@ -24,7 +24,7 @@ GUI/CLI も具体処理 SDK を直接呼ばず、公開 API を通じてフロ�
 
 ### 1. コア／ホスト／CLIの初期言語
 
-**Node.js 24 LTS + TypeScript 6.x + ESM** を採用する。
+**Node.js 24 LTS + TypeScript 7.x + ESM** を採用する。
 
 初期のパッケージ管理は Node.js 同梱の npm workspaces を使う。追加のパッケージマネージャを基盤要件にしない。
 
@@ -206,6 +206,6 @@ transport protocol の互換性も manifest/handshake で明示する。
 ## References
 
 - Node.js releases: https://nodejs.org/en/about/previous-releases
-- TypeScript 6.0: https://www.typescriptlang.org/docs/handbook/release-notes/typescript-6-0.html
+- TypeScript 7.0: https://www.typescriptlang.org/docs/handbook/release-notes/typescript-7-0.html
 - JSON-RPC 2.0: https://www.jsonrpc.org/specification
 - Node.js SQLite: https://nodejs.org/api/sqlite.html
