@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "typecheck": "npm run build --workspace @open-scraping/contracts && npm run typecheck --workspaces --if-present",
     "check:boundaries": "node scripts/check-boundaries.mjs",
     "check:docs": "node scripts/check-docs.mjs",
     "test:prototype": "node prototypes/adr-0001-stdio-component/host.mjs",
@@ -20,6 +20,7 @@
     "verify": "npm run typecheck && npm test"
   },
   "devDependencies": {
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "@types/node": "24.13.6"
   }
 }
