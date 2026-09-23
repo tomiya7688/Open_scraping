@@ -1,0 +1,43 @@
+{
+  "schema_version": "0.3",
+  "kind": "flow",
+  "id": "local-processing",
+  "example_only": true,
+  "description": "Web・ブラウザ・検索・保存・フィルターを必要としない契約試験用モック。文字列を大文字化する部品を呼ぶ設計例で、実装済みではありません。",
+  "inputs": {
+    "text": {
+      "type": "example.text/v1",
+      "value": "open scraping"
+    }
+  },
+  "components": {
+    "transform": {
+      "implementation": "example.local-uppercase",
+      "contract": "example.text-transform/v1",
+      "config": {},
+      "implementation_version": "0.0.0-example"
+    }
+  },
+  "nodes": [
+    {
+      "id": "transform",
+      "component": "transform",
+      "operation": "transform",
+      "inputs": {
+        "text": {
+          "$ref": "flow.inputs.text"
+        }
+      }
+    }
+  ],
+  "execution": {
+    "max_parallel_nodes": 1,
+    "timeout_ms": 10000,
+    "on_node_failure": "stop"
+  },
+  "outputs": {
+    "text": {
+      "$ref": "nodes.transform.outputs.text"
+    }
+  }
+}

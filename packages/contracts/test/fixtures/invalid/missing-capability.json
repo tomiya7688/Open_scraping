@@ -1,0 +1,195 @@
+{
+  "schema_version": "0.3",
+  "kind": "flow",
+  "id": "site-image-collection",
+  "example_only": true,
+  "description": "部品を接続する設計例。実装ID・URL・数値は仮で、実行済み機能や取得許可を示しません。フィルターノードはありません。",
+  "inputs": {
+    "query": {
+      "type": "scraping.search-query/v1",
+      "value": {
+        "terms": [
+          "Tシャツ"
+        ],
+        "data_type": "image"
+      }
+    }
+  },
+  "components": {
+    "browser": {
+      "implementation": "example.browser-playwright",
+      "contract": "browser.session/v1",
+      "config": {
+        "engine": "chromium",
+        "mode": "managed",
+        "headless": false,
+        "profile_ref": "profile:collection-default",
+        "resource_keys": [
+          "network",
+          "source:example"
+        ]
+      },
+      "implementation_version": "0.0.0-example"
+    },
+    "search": {
+      "implementation": "example.site-search",
+      "contract": "search.provider/v1",
+      "bindings": {
+        "browser": "browser"
+      },
+      "config": {
+        "mode": "site_native",
+        "sources": [
+          {
+            "id": "site.example",
+            "search_url_template": "https://example.com/search?q={query}",
+            "results_selector": "article.result",
+            "page_link_selector": "a.title",
+            "next_selector": "a.next"
+          }
+        ],
+        "initial_links": {
+          "mode": "allow_only",
+          "hosts": [
+            {
+              "host": "example.com",
+              "include_subdomains": true
+            }
+          ]
+        },
+        "allocation": {
+          "strategy": "equal"
+        },
+        "max_pages": 20,
+        "max_candidates": 1000,
+        "resource_keys": [
+          "network",
+          "source:example"
+        ]
+      },
+      "implementation_version": "0.0.0-example",
+      "requires": [
+        "pagination"
+      ]
+    },
+    "download": {
+      "implementation": "example.asset-download",
+      "contract": "download.provider/v1",
+      "bindings": {
+        "browser": "browser"
+      },
+      "config": {
+        "data_type": "image",
+        "target_count": 200,
+        "max_transfer_bytes": 2147483648,
+        "max_single_file_bytes": 52428800,
+        "request_timeout_ms": 30000,
+        "max_retries": 2,
+        "follow_page_links": false,
+        "resource_keys": [
+          "network",
+          "source:example"
+        ],
+        "timing_scope": "dispatch_only"
+      },
+      "implementation_version": "0.0.0-example"
+    },
+    "storage": {
+      "implementation": "example.local-dataset-store",
+      "contract": "dataset.store/v1",
+      "config": {
+        "workspace_ref": "workspace:default",
+        "retain_original": true,
+        "record_provenance": true
+      },
+      "implementation_version": "0.0.0-example"
+    },
+    "export": {
+      "implementation": "example.files-manifest-export",
+      "contract": "dataset.export/v1",
+      "bindings": {
+        "storage": "storage"
+      },
+      "config": {
+        "format": "files-and-manifest",
+        "destination_ref": "output:default"
+      },
+      "implementation_version": "0.0.0-example"
+    }
+  },
+  "nodes": [
+    {
+      "id": "search",
+      "component": "search",
+      "operation": "search",
+      "inputs": {
+        "query": {
+          "$ref": "flow.inputs.query"
+        }
+      }
+    },
+    {
+      "id": "download",
+      "component": "download",
+      "operation": "fetch",
+      "inputs": {
+        "candidates": {
+          "$ref": "nodes.search.outputs.candidates"
+        }
+      }
+    },
+    {
+      "id": "store",
+      "component": "storage",
+      "operation": "ingest",
+      "inputs": {
+        "batch": {
+          "$ref": "nodes.download.outputs.batch"
+        }
+      }
+    },
+    {
+      "id": "snapshot",
+      "component": "storage",
+      "operation": "snapshot",
+      "inputs": {
+        "collection": {
+          "$ref": "nodes.store.outputs.collection"
+        }
+      }
+    },
+    {
+      "id": "export",
+      "component": "export",
+      "operation": "export",
+      "inputs": {
+        "source": {
+          "$ref": "nodes.snapshot.outputs.snapshot"
+        }
+      }
+    }
+  ],
+  "execution": {
+    "max_parallel_nodes": 3,
+    "timeout_ms": 7200000,
+    "on_node_failure": "stop",
+    "resources": {
+      "network": {
+        "min_start_interval_ms": 1000,
+        "max_in_flight": 2
+      },
+      "source:example": {
+        "min_start_interval_ms": 5000,
+        "max_in_flight": 1
+      }
+    }
+  },
+  "outputs": {
+    "collection": {
+      "$ref": "nodes.snapshot.outputs.snapshot"
+    },
+    "export": {
+      "$ref": "nodes.export.outputs.export"
+    }
+  }
+}
