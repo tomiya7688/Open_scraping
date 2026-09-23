@@ -11,8 +11,8 @@
     "apps/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
-    "typecheck": "npm run build --workspace @open-scraping/contracts && npm run typecheck --workspaces --if-present",
+    "build": "npm run build --workspace @open-scraping/contracts && npm run build --workspace @open-scraping/core && npm run build --workspace @open-scraping/host && npm run build --workspace @open-scraping/api-client && npm run build --workspace @open-scraping/cli && npm run build --workspace @open-scraping/gui",
+    "typecheck": "npm run build --workspace @open-scraping/contracts && npm run build --workspace @open-scraping/core && npm run typecheck --workspaces --if-present",
     "check:boundaries": "node scripts/check-boundaries.mjs",
     "check:docs": "node scripts/check-docs.mjs",
     "test:prototype": "node prototypes/adr-0001-stdio-component/host.mjs",

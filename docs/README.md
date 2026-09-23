@@ -35,6 +35,7 @@
 | [外部部品・標準配布](components.md) | OSSブラウザ・検索のAPI化、共通契約、標準品と追加品の扱い |
 | [実行・ブラウザ復旧](runtime.md) | 停止、再読み込み、開き直し、画像取得間隔、予算と再開 |
 | [正式契約](contracts.md) | FlowConfig 0.3、部品マニフェスト、DataRef、操作メッセージと検証規則 |
+| [部品ホストとローカルワーカー](component-host.md) | stdio worker、再送、中断、binding subcall、権限境界 |
 | [公開API・フロー定義](api.md) | FlowConfig、汎用実行API、部品API、参照と互換性 |
 | [データと保存部品](data.md) | 実行記録と本体データの分離、出典、解析、選別、直接出力 |
 | [ロードマップ・受入条件](roadmap.md) | コア単体・標準構成・利用者による改変の別検証 |
