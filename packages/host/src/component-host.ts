@@ -545,17 +545,22 @@ export class RunComponentInvoker implements FlowInvoker {
     this.#active.set(request.operation_id, active);
 
     if (request.deadline_at !== undefined) {
-      const remaining =
-        Date.parse(request.deadline_at) - Date.now();
+      const deadlineMs = Date.parse(request.deadline_at);
+      const armDeadline = (): void => {
+        const remaining = deadlineMs - Date.now();
 
-      active.deadline_timer = setTimeout(
-        () =>
-          this.#dispatchCancel(
-            active,
-            "deadline_exceeded"
-          ),
-        Math.max(0, remaining)
-      );
+        if (remaining <= 0) {
+          this.#dispatchCancel(active, "deadline_exceeded");
+          return;
+        }
+
+        active.deadline_timer = setTimeout(
+          armDeadline,
+          Math.min(remaining, 2_147_483_647)
+        );
+      };
+
+      armDeadline();
     }
 
     const accepted = result(request, "accepted");
