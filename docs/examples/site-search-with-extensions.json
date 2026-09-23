@@ -1,11 +1,14 @@
 {
-  "schema_version": "0.3-draft",
+  "schema_version": "0.3",
   "kind": "flow",
   "id": "site-image-collection-with-selection",
   "example_only": true,
   "description": "同じFlowConfigに入力支援・解析・選別の部品を追加する設計例。コアの処理種別を追加する例ではありません。ID・設定・数値は仮です。",
   "inputs": {
-    "text": "赤か白のTシャツを着た人物の写真を200枚。商品単体とイラストは不要。背景は問わない。"
+    "text": {
+      "type": "example.text/v1",
+      "value": "赤か白のTシャツを着た人物の写真を200枚。商品単体とイラストは不要。背景は問わない。"
+    }
   },
   "components": {
     "browser": {
@@ -20,7 +23,8 @@
           "network",
           "source:example"
         ]
-      }
+      },
+      "implementation_version": "0.0.0-example"
     },
     "search": {
       "implementation": "example.site-search",
@@ -57,7 +61,8 @@
           "network",
           "source:example"
         ]
-      }
+      },
+      "implementation_version": "0.0.0-example"
     },
     "download": {
       "implementation": "example.asset-download",
@@ -78,7 +83,8 @@
           "source:example"
         ],
         "timing_scope": "dispatch_only"
-      }
+      },
+      "implementation_version": "0.0.0-example"
     },
     "storage": {
       "implementation": "example.local-dataset-store",
@@ -87,7 +93,8 @@
         "workspace_ref": "workspace:default",
         "retain_original": true,
         "record_provenance": true
-      }
+      },
+      "implementation_version": "0.0.0-example"
     },
     "export": {
       "implementation": "example.files-manifest-export",
@@ -98,7 +105,8 @@
       "config": {
         "format": "files-and-manifest",
         "destination_ref": "output:default"
-      }
+      },
+      "implementation_version": "0.0.0-example"
     },
     "interpreter": {
       "implementation": "example.local-query-interpreter",
@@ -110,7 +118,8 @@
           "intent"
         ],
         "external_requests": false
-      }
+      },
+      "implementation_version": "0.0.0-example"
     },
     "analyzer": {
       "implementation": "example.image-condition-analysis",
@@ -121,7 +130,8 @@
       "config": {
         "cache_results": true,
         "external_requests": false
-      }
+      },
+      "implementation_version": "0.0.0-example"
     },
     "selector": {
       "implementation": "example.image-selection",
@@ -149,7 +159,8 @@
         ],
         "unknown_action": "review",
         "delete_excluded_files": false
-      }
+      },
+      "implementation_version": "0.0.0-example"
     }
   },
   "nodes": [

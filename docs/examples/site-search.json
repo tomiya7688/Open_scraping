@@ -1,15 +1,18 @@
 {
-  "schema_version": "0.3-draft",
+  "schema_version": "0.3",
   "kind": "flow",
   "id": "site-image-collection",
   "example_only": true,
   "description": "部品を接続する設計例。実装ID・URL・数値は仮で、実行済み機能や取得許可を示しません。フィルターノードはありません。",
   "inputs": {
     "query": {
-      "terms": [
-        "Tシャツ"
-      ],
-      "data_type": "image"
+      "type": "scraping.search-query/v1",
+      "value": {
+        "terms": [
+          "Tシャツ"
+        ],
+        "data_type": "image"
+      }
     }
   },
   "components": {
@@ -25,7 +28,8 @@
           "network",
           "source:example"
         ]
-      }
+      },
+      "implementation_version": "0.0.0-example"
     },
     "search": {
       "implementation": "example.site-search",
@@ -62,7 +66,8 @@
           "network",
           "source:example"
         ]
-      }
+      },
+      "implementation_version": "0.0.0-example"
     },
     "download": {
       "implementation": "example.asset-download",
@@ -83,7 +88,8 @@
           "source:example"
         ],
         "timing_scope": "dispatch_only"
-      }
+      },
+      "implementation_version": "0.0.0-example"
     },
     "storage": {
       "implementation": "example.local-dataset-store",
@@ -92,7 +98,8 @@
         "workspace_ref": "workspace:default",
         "retain_original": true,
         "record_provenance": true
-      }
+      },
+      "implementation_version": "0.0.0-example"
     },
     "export": {
       "implementation": "example.files-manifest-export",
@@ -103,7 +110,8 @@
       "config": {
         "format": "files-and-manifest",
         "destination_ref": "output:default"
-      }
+      },
+      "implementation_version": "0.0.0-example"
     }
   },
   "nodes": [

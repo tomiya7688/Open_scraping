@@ -24,7 +24,18 @@
   "type": "scraping.collection/v1",
   "provider": "storage",
   "ref": "collection-example",
-  "revision": "1"
+  "revision": "1",
+  "access": {
+    "mode": "host-mediated"
+  },
+  "lifetime": {
+    "scope": "persistent"
+  },
+  "persistence": {
+    "state": "committed",
+    "commit_ref": "commit-example"
+  },
+  "dispose_required": false
 }
 ```
 
