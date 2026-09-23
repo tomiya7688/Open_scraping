@@ -133,6 +133,68 @@ export interface DataRef {
   dispose_required: boolean;
 }
 
+export type OperationStatus =
+  | "accepted"
+  | "running"
+  | "succeeded"
+  | "failed"
+  | "cancelled"
+  | "termination_unknown";
+
+export interface OperationError {
+  code: string;
+  message: string;
+  retryable: boolean;
+  details?: unknown;
+}
+
+export interface OperationRequest {
+  schema_version: "0.1";
+  kind: "operation-request";
+  operation_id: string;
+  run_id?: string;
+  node_id?: string;
+  component: string;
+  operation: string;
+  inputs: Record<string, unknown>;
+  idempotency_key: string;
+  deadline_at?: string;
+}
+
+export interface OperationProgress {
+  schema_version: "0.1";
+  kind: "operation-progress";
+  operation_id: string;
+  sequence: number;
+  completed?: number;
+  total?: number;
+  message?: string;
+}
+
+export interface OperationResult {
+  schema_version: "0.1";
+  kind: "operation-result";
+  operation_id: string;
+  status: OperationStatus;
+  outputs: Record<string, unknown>;
+  checkpoint_ref?: string;
+  error?: OperationError;
+}
+
+export interface OperationCancel {
+  schema_version: "0.1";
+  kind: "operation-cancel";
+  operation_id: string;
+  requested_at: string;
+  reason?: string;
+}
+
+export type OperationMessage =
+  | OperationRequest
+  | OperationProgress
+  | OperationResult
+  | OperationCancel;
+
 export interface ContractDiagnostic {
   code: string;
   path: string;
