@@ -94,3 +94,25 @@ HTTP APIの形式候補。現在の設計書のAPI表は正式なOpenAPI定義�
 [MPL 2.0 FAQ — Mozilla](https://www.mozilla.org/en-US/MPL/2.0/FAQ/)
 
 利用・改変・配布を区別して確認する資料。商用／非商用だけで、すべての依存コードの条件を一括して決めない。本体ライセンスの選定や具体的な再配布許諾をこの文書で行うものではない。
+
+
+<a id="s14"></a>
+## S14. Windowsのグローバル入力監視
+
+[SetWindowsHookExW — Microsoft Learn](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowshookexw)
+
+`WH_KEYBOARD_LL` と `WH_MOUSE_LL` がglobal onlyの低レベルフックとして定義されている。非常停止のWindows実装候補。最終的なスレッド／プロセス構成と合成入力の識別は実装時に固定する。
+
+<a id="s15"></a>
+## S15. macOSのイベント監視
+
+[CGEventTapCreate — Apple Developer Documentation](https://developer.apple.com/documentation/coregraphics/cgevent/tapcreate%28tap%3Aplace%3Aoptions%3Aeventsofinterest%3Acallback%3Auserinfo%3A%29)
+
+キーボード／マウス等のイベントをevent tapで監視する候補。イベント種別や必要権限を実装時に確認し、権限不足を対応済みとして扱わない。
+
+<a id="s16"></a>
+## S16. Waylandのグローバルショートカット
+
+[Global Shortcuts — XDG Desktop Portal](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.GlobalShortcuts.html)
+
+アプリにフォーカスがなくてもグローバルショートカットを扱うportal。汎用ポインタイベント監視のAPIではないため、Escだけを満たしてマウス非常停止も満たしたとはしない。
