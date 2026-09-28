@@ -590,7 +590,7 @@ export class SharedScheduler {
       state.in_flight += 1;
       state.budget_used += budgetCost(request, key);
       state.last_start_mono_ms = monoNow;
-      state.restored_not_before_mono_ms = undefined;
+      delete state.restored_not_before_mono_ms;
       state.start_times_mono_ms.push(monoNow);
       this.#pruneHistory(state, monoNow);
       ownedKeys.push(key);
