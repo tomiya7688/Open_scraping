@@ -23,7 +23,7 @@ function parseEvent(value: string): RunJournalEvent {
 
 export class SqliteRunStateStore implements RunStateStore {
   readonly #path: string;
-  #db?: DatabaseSync;
+  #db: DatabaseSync | undefined;
 
   constructor(options: SqliteRunStateStoreOptions) {
     this.#path = options.path;
@@ -61,7 +61,7 @@ export class SqliteRunStateStore implements RunStateStore {
 
   close(): void {
     this.#db?.close();
-    delete this.#db;
+    this.#db = undefined;
   }
 
   async save_snapshot(snapshot: RunJournalSnapshot): Promise<void> {
