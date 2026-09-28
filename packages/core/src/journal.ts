@@ -296,13 +296,19 @@ export function createRecoveryPlan(
     });
   }
 
-  if (diagnostics.length > 0) {
-    for (const action of actions) {
-      if (action.kind === "ready_for_new_operation") {
-        action.kind = "blocked" as never;
-      }
-    }
-  }
+  const finalizedActions: RecoveryAction[] =
+    diagnostics.length === 0
+      ? actions
+      : actions.map((action) =>
+          action.kind === "ready_for_new_operation"
+            ? {
+                kind: "blocked",
+                node_id: action.node_id,
+                reason:
+                  "Recovery has unresolved DataRef diagnostics; explicit resolution is required"
+              }
+            : action
+        );
 
   return {
     run_id: snapshot.run_id,
@@ -310,14 +316,14 @@ export function createRecoveryPlan(
     next_generation: snapshot.generation + 1,
     status:
       diagnostics.length > 0 ||
-      actions.some(
+      finalizedActions.some(
         (action) =>
           action.kind === "reconcile_required" ||
           action.kind === "blocked"
       )
         ? "needs_attention"
         : "recovering",
-    actions,
+    actions: finalizedActions,
     diagnostics,
     ...(snapshot.scheduler_state === undefined
       ? {}
