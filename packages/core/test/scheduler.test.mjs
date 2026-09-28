@@ -307,9 +307,14 @@ test("window and budget limits are checked before a grant", async () => {
   });
 
   let settled = false;
-  overBudget.finally(() => {
-    settled = true;
-  });
+  void overBudget.then(
+    () => {
+      settled = true;
+    },
+    () => {
+      settled = true;
+    }
+  );
   clock.advance(5000);
   await Promise.resolve();
   assert.equal(settled, false);
