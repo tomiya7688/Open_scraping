@@ -55,6 +55,7 @@
 | [最小収集フロー例](examples/site-search.json) | 検索・取得・保存・出力の部品を接続する構成 |
 | [入力支援・選別付きの例](examples/site-search-with-extensions.json) | 同じフロー形式に任意の解釈・選別ノードを追加 |
 | [Webを使わない処理の例](examples/local-processing.json) | ブラウザ・検索部品なしで自作処理を接続する契約例 |
+| [Webデータ抽出研究](research/web-extraction-methods.md) | wrapper induction、DOM/tree alignment、本文抽出、table、学習型・視覚型などの採用方針 |
 | [参考資料](references.md) | 技術候補の一次資料。採用・実装の保証ではない |
 
 ## この改訂で訂正したこと
