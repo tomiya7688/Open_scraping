@@ -1,92 +1,19 @@
-import {
-  validateFlowStructure
-} from "@open-scraping/contracts";
+import type { FlowNode, OperationError, OperationRequest, OperationResult, ValidationResult } from "@open-scraping/contracts";
+import { createExecutionPlan } from "./execution-plan.js";
+import { utf8ByteLength } from "./inline-bytes.js";
+import { resolveAvailableFlowOutputs, resolveFlowValue } from "./reference-resolution.js";
 import type {
-  ContractDiagnostic,
-  FlowConfig,
-  FlowNode,
-  FlowReference,
-  FlowValue,
-  OperationCancel,
-  OperationError,
-  OperationRequest,
-  OperationResult,
-  ValidationResult
-} from "@open-scraping/contracts";
+  ExecutionPlan, ExecutionPlanNode, FlowInvoker, FlowRunOptions, FlowRunSnapshot,
+  FlowRunStatus, MutableNodeState, NodeRunSnapshot
+} from "./execution-types.js";
 
-export interface FlowInvoker {
-  invoke(request: OperationRequest): Promise<OperationResult>;
-  cancel(request: OperationCancel): Promise<void>;
-}
+export { createExecutionPlan } from "./execution-plan.js";
+export type {
+  FlowInvoker, ExecutionPlanNode, ExecutionPlan, NodeExecutionStatus,
+  NodeRunSnapshot, FlowRunStatus, FlowRunSnapshot, FlowRunOptions
+} from "./execution-types.js";
 
-export interface ExecutionPlanNode {
-  node: FlowNode;
-  dependencies: string[];
-}
-
-export interface ExecutionPlan {
-  flow: FlowConfig;
-  nodes: ExecutionPlanNode[];
-}
-
-export type NodeExecutionStatus =
-  | "pending"
-  | "running"
-  | "succeeded"
-  | "failed"
-  | "cancelled"
-  | "blocked";
-
-export interface NodeRunSnapshot {
-  node_id: string;
-  status: NodeExecutionStatus;
-  operation_id?: string;
-  outputs?: Record<string, unknown>;
-  error?: OperationError;
-}
-
-export type FlowRunStatus =
-  | "created"
-  | "running"
-  | "stopping"
-  | "succeeded"
-  | "failed"
-  | "stopped";
-
-export interface FlowRunSnapshot {
-  run_id: string;
-  flow_id: string;
-  status: FlowRunStatus;
-  started_at?: string;
-  finished_at?: string;
-  nodes: Record<string, NodeRunSnapshot>;
-  outputs: Record<string, unknown>;
-}
-
-export interface FlowRunOptions {
-  run_id: string;
-  max_inline_output_bytes?: number;
-  now?: () => number;
-}
-
-interface MutableNodeState {
-  node_id: string;
-  status: NodeExecutionStatus;
-  operation_id?: string;
-  outputs?: Record<string, unknown>;
-  error?: OperationError;
-}
-
-interface ResolvedReference {
-  found: boolean;
-  value?: unknown;
-}
-
-const NODE_REF =
-  /^nodes\.([A-Za-z_][A-Za-z0-9_-]*)\.outputs\.([A-Za-z_][A-Za-z0-9_-]*)$/;
-const FLOW_INPUT_REF =
-  /^flow\.inputs\.([A-Za-z_][A-Za-z0-9_-]*)$/;
-
+// FlowRun uniquely owns mutable node/run status and cancellation.
 function operationError(
   code: string,
   message: string,
@@ -97,217 +24,6 @@ function operationError(
     ? { code, message, retryable }
     : { code, message, retryable, details };
 }
-
-function nodeDependencies(node: FlowNode): string[] {
-  const dependencies = new Set<string>();
-
-  for (const input of Object.values(node.inputs)) {
-    if (!("$ref" in input)) continue;
-    const match = NODE_REF.exec(input.$ref);
-    const source = match?.[1];
-    if (source !== undefined) dependencies.add(source);
-  }
-
-  return [...dependencies].sort();
-}
-
-function detectCycle(
-  nodeIds: readonly string[],
-  dependencies: ReadonlyMap<string, readonly string[]>
-): string[] | undefined {
-  const state = new Map<string, 0 | 1 | 2>();
-  const stack: string[] = [];
-
-  function visit(nodeId: string): string[] | undefined {
-    const current = state.get(nodeId) ?? 0;
-    if (current === 2) return undefined;
-
-    if (current === 1) {
-      const start = stack.lastIndexOf(nodeId);
-      return [...stack.slice(Math.max(0, start)), nodeId];
-    }
-
-    state.set(nodeId, 1);
-    stack.push(nodeId);
-
-    for (const dependency of dependencies.get(nodeId) ?? []) {
-      const cycle = visit(dependency);
-      if (cycle) return cycle;
-    }
-
-    stack.pop();
-    state.set(nodeId, 2);
-    return undefined;
-  }
-
-  for (const nodeId of nodeIds) {
-    const cycle = visit(nodeId);
-    if (cycle) return cycle;
-  }
-
-  return undefined;
-}
-
-function validateRefTarget(
-  ref: FlowReference,
-  flow: FlowConfig,
-  nodeIds: ReadonlySet<string>,
-  path: string,
-  diagnostics: ContractDiagnostic[]
-): void {
-  const flowInput = FLOW_INPUT_REF.exec(ref.$ref);
-  if (flowInput) {
-    const name = flowInput[1];
-    if (name !== undefined && flow.inputs[name] === undefined) {
-      diagnostics.push({
-        code: "DANGLING_REF",
-        path,
-        message: `Flow input "${name}" does not exist`
-      });
-    }
-    return;
-  }
-
-  const nodeOutput = NODE_REF.exec(ref.$ref);
-  if (nodeOutput) {
-    const nodeId = nodeOutput[1];
-    if (nodeId !== undefined && !nodeIds.has(nodeId)) {
-      diagnostics.push({
-        code: "DANGLING_REF",
-        path,
-        message: `Node "${nodeId}" does not exist`
-      });
-    }
-    return;
-  }
-
-  diagnostics.push({
-    code: "INVALID_REF",
-    path,
-    message: `Unsupported reference syntax: ${ref.$ref}`
-  });
-}
-
-export function createExecutionPlan(
-  value: unknown
-): ValidationResult<ExecutionPlan> {
-  const structured = validateFlowStructure(value);
-  if (!structured.ok) return structured;
-
-  const flow = structured.value;
-  const diagnostics: ContractDiagnostic[] = [];
-  const nodeIds = new Set<string>();
-  const dependencies = new Map<string, string[]>();
-
-  for (let index = 0; index < flow.nodes.length; index += 1) {
-    const node = flow.nodes[index];
-    if (node === undefined) continue;
-
-    if (nodeIds.has(node.id)) {
-      diagnostics.push({
-        code: "DUPLICATE_NODE_ID",
-        path: `/nodes/${index}/id`,
-        message: `Duplicate node id "${node.id}"`
-      });
-    } else {
-      nodeIds.add(node.id);
-    }
-
-    if (flow.components[node.component] === undefined) {
-      diagnostics.push({
-        code: "UNKNOWN_COMPONENT",
-        path: `/nodes/${index}/component`,
-        message: `Component "${node.component}" does not exist`
-      });
-    }
-  }
-
-  for (let index = 0; index < flow.nodes.length; index += 1) {
-    const node = flow.nodes[index];
-    if (node === undefined) continue;
-
-    const deps = nodeDependencies(node);
-    dependencies.set(node.id, deps);
-
-    for (const [inputName, input] of Object.entries(node.inputs)) {
-      if ("$ref" in input) {
-        validateRefTarget(
-          input,
-          flow,
-          nodeIds,
-          `/nodes/${index}/inputs/${inputName}/$ref`,
-          diagnostics
-        );
-      }
-    }
-  }
-
-  for (const [outputName, output] of Object.entries(flow.outputs)) {
-    validateRefTarget(
-      output,
-      flow,
-      nodeIds,
-      `/outputs/${outputName}/$ref`,
-      diagnostics
-    );
-  }
-
-  const cycle = detectCycle([...nodeIds], dependencies);
-  if (cycle) {
-    diagnostics.push({
-      code: "NODE_CYCLE",
-      path: "/nodes",
-      message: `Node dependency cycle: ${cycle.join(" -> ")}`
-    });
-  }
-
-  if (diagnostics.length > 0) {
-    return { ok: false, diagnostics };
-  }
-
-  return {
-    ok: true,
-    value: {
-      flow,
-      nodes: flow.nodes.map((node) => ({
-        node,
-        dependencies: dependencies.get(node.id) ?? []
-      }))
-    },
-    diagnostics: []
-  };
-}
-
-function utf8ByteLength(value: string): number {
-  let bytes = 0;
-
-  for (let index = 0; index < value.length; index += 1) {
-    const code = value.charCodeAt(index);
-
-    if (code < 0x80) {
-      bytes += 1;
-    } else if (code < 0x800) {
-      bytes += 2;
-    } else if (
-      code >= 0xd800 &&
-      code <= 0xdbff &&
-      index + 1 < value.length
-    ) {
-      const next = value.charCodeAt(index + 1);
-      if (next >= 0xdc00 && next <= 0xdfff) {
-        bytes += 4;
-        index += 1;
-      } else {
-        bytes += 3;
-      }
-    } else {
-      bytes += 3;
-    }
-  }
-
-  return bytes;
-}
-
 export class FlowRun {
   readonly #plan: ExecutionPlan;
   readonly #invoker: FlowInvoker;
@@ -373,7 +89,7 @@ export class FlowRun {
         ? {}
         : { finished_at: this.#finishedAt }),
       nodes,
-      outputs: this.#resolveAvailableFlowOutputs()
+      outputs: resolveAvailableFlowOutputs(this.#plan.flow, this.#states)
     };
   }
 
@@ -577,7 +293,7 @@ export class FlowRun {
     const inputs: Record<string, unknown> = {};
 
     for (const [inputName, value] of Object.entries(node.inputs)) {
-      const resolved = this.#resolveFlowValue(value);
+      const resolved = resolveFlowValue(value, this.#plan.flow, this.#states);
       if (!resolved.found) {
         state.status = "failed";
         state.error = operationError(
@@ -702,58 +418,6 @@ export class FlowRun {
     }
   }
 
-  #resolveFlowValue(value: FlowValue): ResolvedReference {
-    if (!("$ref" in value)) {
-      return { found: true, value: value.value };
-    }
-
-    return this.#resolveReference(value);
-  }
-
-  #resolveReference(ref: FlowReference): ResolvedReference {
-    const flowInput = FLOW_INPUT_REF.exec(ref.$ref);
-    if (flowInput) {
-      const inputName = flowInput[1];
-      if (inputName === undefined) return { found: false };
-      const input = this.#plan.flow.inputs[inputName];
-      return input === undefined
-        ? { found: false }
-        : { found: true, value: input.value };
-    }
-
-    const nodeOutput = NODE_REF.exec(ref.$ref);
-    if (!nodeOutput) return { found: false };
-
-    const nodeId = nodeOutput[1];
-    const port = nodeOutput[2];
-    if (nodeId === undefined || port === undefined) {
-      return { found: false };
-    }
-
-    const outputs = this.#states.get(nodeId)?.outputs;
-    if (
-      outputs === undefined ||
-      !Object.prototype.hasOwnProperty.call(outputs, port)
-    ) {
-      return { found: false };
-    }
-
-    return {
-      found: true,
-      value: outputs[port]
-    };
-  }
-
-  #resolveAvailableFlowOutputs(): Record<string, unknown> {
-    const outputs: Record<string, unknown> = {};
-
-    for (const [name, ref] of Object.entries(this.#plan.flow.outputs)) {
-      const resolved = this.#resolveReference(ref);
-      if (resolved.found) outputs[name] = resolved.value;
-    }
-
-    return outputs;
-  }
 }
 
 export function createFlowRun(

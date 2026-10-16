@@ -26,8 +26,10 @@ contracts  →  core  →  host
 
 ### Step 2 — coreのstate machine（10分）
 
-1. [../packages/core/src/execution.ts](../packages/core/src/execution.ts)
-2. [../packages/core/test/execution.test.mjs](../packages/core/test/execution.test.mjs)
+1. [../packages/core/src/execution-plan.ts](../packages/core/src/execution-plan.ts) — execution graph
+2. [../packages/core/src/reference-resolution.ts](../packages/core/src/reference-resolution.ts) — value/refs
+3. [../packages/core/src/execution.ts](../packages/core/src/execution.ts) — mutable run state
+4. [../packages/core/test/execution.test.mjs](../packages/core/test/execution.test.mjs)
 
 見る場所：
 
@@ -40,10 +42,12 @@ contracts  →  core  →  host
 
 ### Step 3 — hostの境界（15分）
 
-1. [../packages/host/src/registry.ts](../packages/host/src/registry.ts)
-2. [../packages/host/src/protocol.ts](../packages/host/src/protocol.ts)
-3. [../packages/host/src/component-host.ts](../packages/host/src/component-host.ts)
-4. 対応するtest
+1. [../packages/host/src/registry.ts](../packages/host/src/registry.ts) — registration
+2. [../packages/host/src/protocol.ts](../packages/host/src/protocol.ts) — framing
+3. [../packages/host/src/host-invocation.ts](../packages/host/src/host-invocation.ts) — idempotency
+4. [../packages/host/src/worker-session.ts](../packages/host/src/worker-session.ts) — worker lifecycle
+5. [../packages/host/src/component-host.ts](../packages/host/src/component-host.ts) — run scope
+6. 対応するtest
 
 ここではcomponent version固定、worker ownership、permission、cancel raceを中心に見ます。
 
@@ -57,7 +61,8 @@ contracts  →  core  →  host
 
 - types.ts
 - schemas.ts
-- validator.ts
+- validation-schema.ts / validation-manifest.ts
+- validation-bindings.ts / validation-flow.ts
 - fixtures
 - contracts tests
 
@@ -71,7 +76,7 @@ contracts  →  core  →  host
 
 必須：
 
-- core/src/execution.ts
+- core/src/execution-plan.ts / reference-resolution.ts / execution.ts
 - core tests
 - check-boundaries
 
@@ -103,7 +108,7 @@ contracts  →  core  →  host
 必須：
 
 - protocol.ts
-- component-host.ts
+- worker-session.ts / host-invocation.ts / component-host.ts
 - mock-worker fixture
 - component-host tests
 
