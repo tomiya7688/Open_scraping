@@ -8,7 +8,11 @@ coreは「何を処理しているか」を理解しません。FlowConfigの依
 
 | ファイル | 何があるか |
 | --- | --- |
-| [src/execution.ts](src/execution.ts) | execution plan作成、FlowRun、node実行、参照解決、stop |
+| [src/execution.ts](src/execution.ts) | FlowRun状態機械、node実行、停止・public facade |
+| [src/execution-types.ts](src/execution-types.ts) | 公開plan/run型、FlowInvoker抽象境界 |
+| [src/execution-plan.ts](src/execution-plan.ts) | 依存関係の検証・execution plan作成 |
+| [src/reference-resolution.ts](src/reference-resolution.ts) | flow入力とnode出力の参照解決 |
+| [src/inline-bytes.ts](src/inline-bytes.ts) | inline outputバイト数チェック |
 | [src/index.ts](src/index.ts) | public export |
 | [test/execution.test.mjs](test/execution.test.mjs) | 並列、依存、失敗、stop、cycle、inline output制限 |
 
