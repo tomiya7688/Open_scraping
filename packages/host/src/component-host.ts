@@ -2,7 +2,7 @@ import { validateOperationMessage } from "@open-scraping/contracts";
 import type { OperationCancel, OperationProgress, OperationRequest, OperationResult } from "@open-scraping/contracts";
 import type { FlowInvoker } from "@open-scraping/core";
 import type { ComponentBindingSnapshot, ComponentRegistry } from "./registry.js";
-import { ProtocolError } from "./protocol.js";
+import { ProtocolError, WorkerExitedError } from "./protocol.js";
 import { HostInvocationError, parseBindingInvocation, requestContentHash, result, terminalStatus } from "./host-invocation.js";
 import { openWorkerSession } from "./worker-session.js";
 import type {
