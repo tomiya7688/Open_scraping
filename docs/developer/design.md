@@ -2,7 +2,7 @@
 
 [設計書一覧](README.md)
 
-改訂日：2026-09-22。状態：設計。具体的なAPI名・値・配置は実装案。
+初版改訂日：2026-09-22。状態：設計方針の参照資料。初期技術選択は後日 [ADR-0001](adr/0001-initial-technology-stack.md) で確定し、実装済みの範囲は [開発ガイド](development-guide.md) に記す。具体的なAPI・部品は個別Issueで追跡する。
 
 ## 1. 完成品ではなく、改変の出発点
 
@@ -139,4 +139,4 @@ GUIの停止・再読み込み・開き直しは公開APIを呼ぶ。コアは�
 
 標準構成の画面、部品、フローを使わない派生構成も、同じ契約で動かせること。新しい処理型のためにコアへ処理名のホワイトリストやデータ種別分岐を追加しない。
 
-OS、言語、配布・隔離方式、正式な契約版、モデル、ライセンス等は未決定。改変の道筋は[customization.md](customization.md)、契約は[api.md](api.md)、到達条件は[roadmap.md](roadmap.md)を参照。
+初期OS・言語・ホスト通信などは [ADR-0001](adr/0001-initial-technology-stack.md) で決定済み。配布条件・モデル・個別部品などの未決定事項は対応Issueで追跡する。改変の道筋は[customization.md](customization.md)、契約は[api.md](api.md)、到達条件は[roadmap.md](roadmap.md)を参照。
