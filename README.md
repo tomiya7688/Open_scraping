@@ -1,198 +1,71 @@
 # Open_scraping
 
-> **現在は 0.x のフロー実行基盤を実装中です。実際のブラウザ検索・ダウンロード・フィルター等はまだ標準実装されていません。**
+**交換可能な部品を Flow につなぐ、拡張・派生を前提としたデータ収集基盤。**
 
-Open_scraping は「完成したスクレイパー」ではなく、**交換可能な部品をつないで自分の収集ソフトを作るための基盤**です。
+> **開発中（0.x）**：現在の `main` は契約検証・フロー実行・部品ホストの基盤実装段階です。実際のWeb検索、ダウンロード、一般向けGUI/CLIはまだ標準実装されていません。計画中の機能を使用可能とは扱わないでください。
 
-## 最初に見る場所
+## ドキュメントの入口
 
-目的別に、ここから読んでください。
-
-| やりたいこと | 最初に見るファイル |
-| --- | --- |
-| **コードレビューしたい** | [docs/code-review.md](docs/code-review.md) |
-| **今どこまで実装済みか知りたい** | このREADMEの「実装状況」 |
-| **コードの置き場所を知りたい** | [packages/README.md](packages/README.md) |
-| フロー形式・部品契約を確認したい | [docs/contracts.md](docs/contracts.md) |
-| コアの責務を確認したい | [docs/design.md](docs/design.md) |
-| component host / stdio RPCを確認したい | [docs/component-host.md](docs/component-host.md) |
-| 全設計文書の索引 | [docs/README.md](docs/README.md) |
-| 実装計画・Issue一覧 | [Issue #1](https://github.com/tomiya7688/Open_scraping/issues/1) |
-
-**レビューだけなら、最初から `docs/design.md` を全部読む必要はありません。**
-現在の実装は `contracts → core → host` の3パッケージを追えば把握できます。
-
----
-
-## 実装状況
-
-| 場所 | 状態 | 役割 |
+| 読者 | 最初に読むところ | 内容 |
 | --- | --- | --- |
-| [packages/contracts](packages/contracts/) | **実装済み・テストあり** | FlowConfig、component manifest、DataRef、operation message、検証 |
-| [packages/core](packages/core/) | **実装済み・テストあり** | 処理内容を知らないフロー実行、依存解決、停止、状態遷移 |
-| [packages/host](packages/host/) | **実装済み・テストあり** | component登録、binding固定、stdio JSON-RPC worker、取消・deadline・permission |
-| [packages/api-client](packages/api-client/) | **stub** | 公開APIクライアント予定 |
-| [apps/cli](apps/cli/) | **stub** | 公開APIだけを呼ぶCLI予定 |
-| [apps/gui](apps/gui/) | **stub** | 公開APIだけを呼ぶGUI予定 |
-| [components](components/) | **枠だけ** | ブラウザ、検索、取得、保存、フィルター等の実処理部品 |
-| [flows](flows/) | **枠だけ** | 標準FlowConfig / preset |
-| [distributions](distributions/) | **枠だけ** | 標準・派生配布定義 |
-| [prototypes](prototypes/) | **試作** | ADRで技術判断に使った小さな検証コード |
+| **利用者・試してみたい人** | **[利用者向けガイド](docs/user/README.md)** | 現在できること、準備、試せる範囲、用語 |
+| **共同開発者・レビュー担当者** | **[開発者向けガイド](docs/developer/README.md)** | 全体構成、開発環境、Issue/PR、テスト、設計 |
+| 初めてのコントリビューター | [CONTRIBUTING.md](CONTRIBUTING.md) | 参加方法・PRの作成 |
+| 資料を横断して探したい人 | [ドキュメント目次](docs/README.md) | 利用者向け／開発者向けの索引 |
 
-### まだ無いもの
-
-現時点では、次は実装済みと考えないでください。
-
-- Chromium / Firefox の標準ブラウザ部品
-- Google / DuckDuckGo / Bing / Yahoo / サイト内検索部品
-- ダウンロード・保存・出力部品
-- テキスト・画像・数表の実処理
-- 自然言語解釈、類似度、重複等の標準フィルター
-- HTTP公開API、実GUI、実CLI
-- グローバル非常停止のOS実装（設計：[docs/emergency-stop.md](docs/emergency-stop.md)、Issue #42）
-
----
-
-## 現在のコードの流れ
-
-今レビューできる主要経路はこれです。
+## 何を作るプロジェクトか
 
 ```text
-FlowConfig
-   │
-   ├─ contracts
-   │    ├─ JSON Schema
-   │    ├─ 構造・型・参照検証
-   │    └─ component manifest / operation message
-   │
-   ├─ host: ComponentRegistry
-   │    └─ component実装・版・bindingを固定した snapshot を作る
-   │
-   ├─ core: FlowRun
-   │    ├─ node依存関係を解決
-   │    ├─ 並列数・失敗方針・stopを管理
-   │    └─ FlowInvoker を呼ぶ
-   │
-   └─ host: RunComponentInvoker
-        ├─ workerをspawn
-        ├─ stdio JSON-RPC
-        ├─ permission / deadline / idempotency
-        ├─ cancel
-        └─ 必要なら所有workerを終了
+利用者の設定 / FlowConfig
+           │
+           ▼
+ contracts（構造・型・能力を検証）
+           │
+           ▼
+ core（ノードの順序・並列・状態・停止）
+           │ FlowInvoker
+           ▼
+ host（部品の選択・起動・RPC・権限）
+           │
+           ▼
+ Components（検索・取得・保存・処理などの交換可能な部品）
 ```
 
-重要なのは、**core は child_process / HTTP / Playwright / DB / モデルを直接使わない**ことです。
-この境界は [scripts/check-boundaries.mjs](scripts/check-boundaries.mjs) でCI検査しています。
+GUI/CLIは将来、公開API経由で同じ仕組みを呼び出す設計です。Core はブラウザ/検索/DB/画像処理などの実装を含まず、外部部品の操作を特別扱いしません。
 
----
+## main の実装範囲
 
-## コードレビューの最短ルート
+| 領域 | 状態と役割 |
+| --- | --- |
+| [packages/contracts](packages/contracts/) | **実装あり・テストあり**：FlowConfig、manifest、DataRef、操作メッセージの検証 |
+| [packages/core](packages/core/) | **実装あり・テストあり**：依存解決、実行順序、並列、停止、失敗状態 |
+| [packages/host](packages/host/) | **実装あり・テストあり**：component registry、worker通信、取消、期限、権限 |
+| [packages/api-client](packages/api-client/) | **stub**：公開APIクライアント予定 |
+| [apps/cli](apps/cli/) / [apps/gui](apps/gui/) | **stub**：公開APIを呼ぶCLI/GUI予定 |
+| [components](components/) / [flows](flows/) / [distributions](distributions/) | **枠のみ**：実処理部品、標準フロー、派生配布定義 |
+| [prototypes](prototypes/) | **試作**：技術選定用のモック |
 
-初見レビューはこの順番を推奨します。
+現時点で**未実装**の主なもの：実ブラウザ・検索サービス、実データ取得と保存/出力、商品検索/推薦、正式GUI/CLI/HTTP API、OSレベルのグローバル非常停止。特に**Escまたは物理マウス入力によるフォーカス非依存の非常停止は必須設計ですが、OS実装はまだありません**（[Issue #42](https://github.com/tomiya7688/Open_scraping/issues/42)）。
 
-1. [packages/contracts/src/types.ts](packages/contracts/src/types.ts) — 共通データ型
-2. [packages/contracts/src/schemas.ts](packages/contracts/src/schemas.ts) — wire format
-3. [packages/contracts/src/validator.ts](packages/contracts/src/validator.ts) — 契約検証
-4. [packages/core/src/execution.ts](packages/core/src/execution.ts) — フロー実行本体
-5. [packages/host/src/registry.ts](packages/host/src/registry.ts) — component登録・binding解決
-6. [packages/host/src/protocol.ts](packages/host/src/protocol.ts) — stdio JSON-RPC framing
-7. [packages/host/src/component-host.ts](packages/host/src/component-host.ts) — worker lifecycle / invoke / cancel
-8. 対応する `test/*.test.mjs`
-9. [scripts/check-boundaries.mjs](scripts/check-boundaries.mjs) — アーキテクチャ違反検出
+詳細は [利用者向け機能一覧](docs/user/capabilities.md) にあります。進行中の PR と main への反映は別です。
 
-論点別のチェックリストと「どのテストが何を保証するか」は
-**[docs/code-review.md](docs/code-review.md)** にまとめています。
+## ソースから基盤を検証する（開発者向け）
 
----
-
-## リポジトリ構成
-
-```text
-.
-├─ packages/
-│  ├─ contracts/     # 共通契約・schema・validator
-│  ├─ core/          # 汎用Flow runtime
-│  ├─ host/          # component registry / worker host / protocol
-│  └─ api-client/    # stub
-├─ apps/
-│  ├─ cli/           # stub
-│  └─ gui/           # stub
-├─ components/       # 今後の実処理部品
-├─ flows/            # 今後の標準FlowConfig / preset
-├─ distributions/    # 今後の配布構成
-├─ prototypes/       # 技術試作
-├─ scripts/          # CI用の境界・docs検査
-├─ docs/             # 設計・ADR・レビューガイド
-└─ .github/workflows/ci.yml
-```
-
-各packageの詳しい責務は [packages/README.md](packages/README.md) から辿れます。
-
----
-
-## 開発・検証
-
-### 必要環境
-
-- Node.js 24.21.0（24 LTS系）
-- npm 11系
-
-### セットアップ
+Node.js **24.21.0**、npm **11系** を使用します。
 
 ```bash
+git clone https://github.com/tomiya7688/Open_scraping.git
+cd Open_scraping
 npm install
 npm run verify
 ```
 
-### よく使うコマンド
+`npm run verify` は型チェック、依存境界、ドキュメント、モックのテストであり、**実Webサイトのスクレイピング成功テストではありません**。
 
-```bash
-npm run build
-npm run typecheck
-npm test
-npm run check:boundaries
-npm run check:docs
+実装箇所の案内は [packages/README.md](packages/README.md)、全体の開発手順は [開発ガイド](docs/developer/development-guide.md)、レビュー観点は [コードレビューガイド](docs/developer/code-review.md) を参照してください。
 
-# package単体
-npm test --workspace @open-scraping/contracts
-npm test --workspace @open-scraping/core
-npm test --workspace @open-scraping/host
-```
+## 開発状況と参加
 
-`npm run verify` は、型検査、依存境界、docsリンク／JSON、prototype、各workspace testをまとめて実行します。
+開発順序と受入条件は [管理Issue #1](https://github.com/tomiya7688/Open_scraping/issues/1) と [開発ロードマップ](docs/developer/roadmap.md) を正本とします。改善提案や不具合は [Issues](https://github.com/tomiya7688/Open_scraping/issues) に、変更は [Pull requests](https://github.com/tomiya7688/Open_scraping/pulls) に投稿してください。
 
-0.x基盤の検証にはブラウザ・モデル・検索サービスのAPI keyは不要です。
-
----
-
-## レビュー時に守る境界
-
-このプロジェクトで最も重要なレビュー観点です。
-
-- **core に具体処理を入れない**
-  - browser / search / HTTP / filesystem dataset / DB / model 等
-- **標準部品を特別扱いしない**
-  - 固定component IDによる分岐を作らない
-- **GUI / CLI に実処理を入れない**
-  - 公開APIクライアントだけを使う
-- **未対応を成功扱いしない**
-  - unsupported / failed / cancelled / termination_unknown を潰さない
-- **大きなデータ本体をcoreへ流し込まない**
-  - DataRefを使う
-- **componentの版とbindingを実行時に固定する**
-  - 暗黙fallbackをしない
-
-自動検査だけでは判断できない項目もあるため、詳細は [docs/code-review.md](docs/code-review.md) を参照してください。
-
----
-
-## 設計思想を読む場合
-
-実装を追った後で必要な文書だけ読んでください。
-
-- [docs/design.md](docs/design.md) — コアと外部部品の境界
-- [docs/contracts.md](docs/contracts.md) — 現行contract仕様
-- [docs/runtime.md](docs/runtime.md) — stop / recovery / scheduling
-- [docs/customization.md](docs/customization.md) — 改変して別ソフトを作る方針
-- [docs/emergency-stop.md](docs/emergency-stop.md) — コア唯一の安全機能
-- [docs/roadmap.md](docs/roadmap.md) — 受入条件
+参加時は [コントリビューション手順](docs/developer/contributing.md) を確認してください。**ライセンス・配布方針は [Issue #3](https://github.com/tomiya7688/Open_scraping/issues/3) で未決定**であり、公開されていること自体を再配布・再利用の許諾とは解釈しないでください。
