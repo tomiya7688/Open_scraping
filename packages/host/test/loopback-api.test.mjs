@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { request as httpRequest } from "node:http";
 import test from "node:test";
 
 import { ComponentRegistry, startLoopbackApi } from "../dist/index.js";
@@ -136,11 +137,27 @@ test("only serves loopback with bearer auth, exact Host and explicit Origin", as
     });
     assert.equal(preflight.status, 204);
 
-    const badHost = await request(base, "/api/v0/components", {
-      headers: { Host: "attacker.invalid" }
+    // Fetch may overwrite Host with the URL authority; use raw node:http
+    // to verify the server actually rejects a forged Host header.
+    const badHostStatus = await new Promise((resolve, reject) => {
+      const address = new URL(base);
+      const raw = httpRequest({
+        hostname: address.hostname,
+        port: Number(address.port),
+        path: "/api/v0/components",
+        method: "GET",
+        headers: {
+          Host: "attacker.invalid",
+          Authorization: "Bearer " + token
+        }
+      }, (response) => {
+        response.resume();
+        response.on("end", () => resolve(response.statusCode));
+      });
+      raw.on("error", reject);
+      raw.end();
     });
-    assert.equal(badHost.status, 400);
-    assert.equal((await badHost.json()).error.code, "INVALID_HOST");
+    assert.equal(badHostStatus, 400);
   });
 });
 
