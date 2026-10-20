@@ -128,10 +128,6 @@ function writeFailure(response: ServerResponse, result: Exclude<CatalogWriteResu
   });
 }
 
-function isJsonObject(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
-}
-
 function validateOptions(options: LoopbackApiOptions): {
   port: number;
   tokenHash: Buffer;
@@ -309,7 +305,7 @@ export async function startLoopbackApi(options: LoopbackApiOptions): Promise<Loo
           url.pathname.startsWith("/api/v0/operations")) {
         throw new ApiError(501, "NOT_IMPLEMENTED", "Run and operation APIs are not implemented");
       }
-      if (isJsonObject(url) && url.pathname.startsWith("/api/v0/components/") && method === "POST") {
+      if (url.pathname.startsWith("/api/v0/components/") && method === "POST") {
         throw new ApiError(501, "NOT_IMPLEMENTED", "Component invoke is not implemented");
       }
 
