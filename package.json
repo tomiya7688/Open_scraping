@@ -15,8 +15,9 @@
     "typecheck": "npm run build --workspace @open-scraping/contracts && npm run build --workspace @open-scraping/core && npm run typecheck --workspaces --if-present",
     "check:boundaries": "node scripts/check-boundaries.mjs",
     "check:docs": "node scripts/check-docs.mjs",
+    "check:agents": "node scripts/check-agent-instructions.mjs",
     "test:prototype": "node prototypes/adr-0001-stdio-component/host.mjs",
-    "test": "npm run check:boundaries && npm run check:docs && npm run test:prototype && npm run test --workspaces --if-present",
+    "test": "npm run check:boundaries && npm run check:docs && npm run check:agents && npm run test:prototype && npm run test --workspaces --if-present",
     "verify": "npm run typecheck && npm test"
   },
   "devDependencies": {
