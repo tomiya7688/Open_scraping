@@ -1,0 +1,58 @@
+[
+  {
+    "name": "Core run cancellation",
+    "task": "Investigate FlowRun core execution stop cancellation and recovery race",
+    "max_files": 6,
+    "expected_any": [
+      [
+        "packages/core/src/execution.ts"
+      ],
+      [
+        "docs/developer/runtime.md",
+        "docs/runtime.md"
+      ]
+    ]
+  },
+  {
+    "name": "Contract and manifest validation",
+    "task": "Fix FlowConfig contract schema validator and manifest validation for missing capability",
+    "max_files": 6,
+    "expected_any": [
+      [
+        "packages/contracts/src/validator.ts"
+      ],
+      [
+        "docs/developer/contracts.md",
+        "docs/contracts.md"
+      ]
+    ]
+  },
+  {
+    "name": "Worker RPC permissions",
+    "task": "Debug host worker permission cancel RPC stdio handling",
+    "max_files": 6,
+    "expected_any": [
+      [
+        "packages/host/src/component-host.ts"
+      ],
+      [
+        "docs/developer/component-host.md",
+        "docs/component-host.md"
+      ]
+    ]
+  },
+  {
+    "name": "Agent handoff",
+    "task": "Improve AI agent handoff across Claude Code Codex and Copilot review",
+    "max_files": 6,
+    "expected_any": [
+      [
+        "docs/developer/ai-collaboration.md"
+      ],
+      [
+        "docs/developer/code-review.md",
+        "docs/code-review.md"
+      ]
+    ]
+  }
+]
