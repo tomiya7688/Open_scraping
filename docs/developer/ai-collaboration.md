@@ -26,6 +26,12 @@ ChatGPT、Claude（チャット）、Claude Code、Codex、GitHub Copilot が **
 
 これはコピペ可能な起動用の例であり、自動ファイル読み込み機構を追加するものではありません。
 
+## AI Context Reduction を使った作業前・引き継ぎ
+
+[Context Reductionガイド](context-reduction.md) に、`AGENTS.md` の重要規約を逐語保持しながら、タスクに必要なファイルを抜粋する `npm run context:pack`、CI/PRの証拠と未実施を区別して引き継ぐ `npm run context:handoff`、関連ファイル再発見率・バイト削減率を測る `npm run context:benchmark` をまとめています。
+
+これらは外部モデルへ無断送信せず、ローカルで動作します。**パックは読み直しの入口であって、Issue/PR・コード全文・実CIの代用ではありません。** 内容確認と最終マージ判断を人間とレビューに残します。
+
 ## 複数AIで同じIssueを扱うとき
 
 1. **担当を分ける**：一つのIssueを複数PRに分ける場合、契約/ランタイム/API/部品/レビュー等、変更可能なファイルと依存PRを明記する。

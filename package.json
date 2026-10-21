@@ -17,8 +17,12 @@
     "check:docs": "node scripts/check-docs.mjs",
     "check:agents": "node scripts/check-agent-instructions.mjs",
     "test:prototype": "node prototypes/adr-0001-stdio-component/host.mjs",
-    "test": "npm run check:boundaries && npm run check:docs && npm run check:agents && npm run test:prototype && npm run test --workspaces --if-present",
-    "verify": "npm run typecheck && npm test"
+    "test": "npm run check:boundaries && npm run check:docs && npm run check:agents && npm run check:context && npm run test:prototype && npm run test --workspaces --if-present",
+    "verify": "npm run typecheck && npm test",
+    "context:pack": "node tools/agent-context/cli.mjs pack",
+    "context:handoff": "node tools/agent-context/cli.mjs handoff",
+    "context:benchmark": "node tools/agent-context/cli.mjs benchmark",
+    "check:context": "node --test tools/agent-context/test/*.test.mjs"
   },
   "devDependencies": {
     "typescript": "7.0.2",
