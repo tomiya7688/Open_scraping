@@ -1,4 +1,6 @@
 import { readFile, lstat } from "node:fs/promises";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { createPack, corpusSize } from "./selection.mjs";
 import { createHandoff } from "./handoff.mjs";
 import { DEFAULT_ROOT, invariantsFrom, readSource } from "./canonical.mjs";
@@ -92,7 +94,7 @@ async function main() {
   }
 }
 
-if (process.argv[1] && import.meta.url === new URL("file://" + process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   main().catch((error) => {
     // Deliberately do not echo user-provided content or credentials.
     console.error("Context workflow error: " + error.message);
