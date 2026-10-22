@@ -11,6 +11,34 @@ ChatGPT、Claude、Claude Code、Codex、GitHub Copilotが、全ファイル・�
 - **制限：** AIの内部コンテキストの自動要約やモデルの正確なトークン数の測定ではない。コンテキストパックは**参照の入口**であり、原本・未マージPR・検証済み環境に代わるものではない
 - **導入依存：** この変更はAI共通規約 [PR #73](https://github.com/tomiya7688/Open_scraping/pull/73) をベースにしている。PR #73のマージ前は `main` に `AGENTS.md` が存在しない
 
+## 原典：ObaPick（旧リポジトリ名 ai-context-reducer）
+
+この開発手法の参照元は、同じGitHub所有者の **[ObaPick / ai-context-reducer](https://github.com/tomiya7688/ai-context-reducer)** です。外部にある似た名称のプロジェクトと取り違えないこと。ObaPickは「LLMの履歴を一律に短くするソフト」ではなく、**AIに読む情報を選ばせ、検索・作業・検証を制御するための方法、ひな型、任意の補助ツール**を提供しています。
+
+導入の基本は [AIに読む情報を絞る3つの方法](https://github.com/tomiya7688/ai-context-reducer/blob/main/docs/jp/手法/AIに読む情報を絞る3つの方法.md) のとおり、**機械で分かることは先に機械で調べる・繰り返す手順は共通化する・今回関係する部分だけ読む**、の3点です。追加ツールは [必要な方法だけ選ぶ](https://github.com/tomiya7688/ai-context-reducer/blob/main/docs/jp/導入/必要な方法だけ選ぶ.md) に従い、繰り返しの困りごとに応じて導入します。
+
+### Open scrapingに適用する手法
+
+| 開発の状況 | ObaPickの具体的な手法（原典） | Open scrapingでの適用 |
+| --- | --- | --- |
+| 「次」と依頼された | [課題一覧から一件ずつAIに進めさせる](https://github.com/tomiya7688/ai-context-reducer/blob/main/docs/jp/手法/課題一覧から一件ずつAIに進めさせる.md) | GitHub Issuesを唯一の課題一覧とする。未マージPRと依存を確認し、着手できる**一件だけ**を進める。無断で複数Issueを消化しない |
+| 変更の担当箇所が不明 | [変更内容ごとに読む場所と確認方法を一覧にする](https://github.com/tomiya7688/ai-context-reducer/blob/main/docs/jp/手法/変更内容ごとに読む場所と確認方法を一覧にする.md) | [開発ガイド](development-guide.md) のパッケージ役割表と、対応Issueの受入条件を最初の案内に使い、実際のコードとテストで確認する |
+| 大きなコードを扱う | [今回読むファイルを選ぶ](https://github.com/tomiya7688/ai-context-reducer/blob/main/docs/jp/手法/今回読むファイルを選ぶ.md) | 先に名前・文字列・関数の場所を検索。該当行の前後とテストを読み、判断できない部分だけ探索を広げる |
+| 調査が長引く | [AIに調査を止めさせる条件を決める](https://github.com/tomiya7688/ai-context-reducer/blob/main/docs/jp/手法/AIに調査を止めさせる条件を決める.md) | 「再現する条件・関係する実装・合格判定の方法」が揃えば探索を切り上げる。足りない条件だけ追加調査する |
+| PRが並行する | [複数のAIに担当と編集範囲を分けて頼む](https://github.com/tomiya7688/ai-context-reducer/blob/main/docs/jp/手法/複数のAIに担当と編集範囲を分けて頼む.md) | 契約、Core、Host、API、文書の担当と編集できるファイルを明示。別ブランチでも共有ファイルはまとめ役が順に編集する |
+| 変更後の確認が広い | [変更の影響から実行するテストを決める](https://github.com/tomiya7688/ai-context-reducer/blob/main/docs/jp/手法/変更の影響から実行するテストを決める.md) | 対応workspace testを先に実行し、契約・公開API・共通実装を触った場合は`npm run verify`で広く確認する |
+| 指示や説明が長い | [AIに作業場所に合った指示書を読ませる](https://github.com/tomiya7688/ai-context-reducer/blob/main/docs/jp/手法/AIに作業場所に合った指示書を読ませる.md)・[同じ説明を何度も書かない](https://github.com/tomiya7688/ai-context-reducer/blob/main/docs/jp/手法/同じ説明を何度も書かない.md) | `AGENTS.md`を共通の正本とし、詳細は`docs/developer/`に一箇所だけ置く。必要性が確認できたときだけ作業場所に固有の指示を追加 |
+| 読み込み量が増えた | [AIの作業履歴から無駄な読み込みを見つけて改善する](https://github.com/tomiya7688/ai-context-reducer/blob/main/docs/jp/手法/AIの作業履歴から無駄な読み込みを見つけて改善する.md) | ログ等で繰り返し読まれた箇所を特定し、原因ごとに一つだけ変更して、品質と再読量を比較する |
+
+ObaPickが提供する [補助ツール対応表](https://github.com/tomiya7688/ai-context-reducer/blob/main/docs/jp/手法/手法と補助ツールの対応表.md) には、`change-router`、`context-pack-builder`、`scoped-guides`、`source-structure-index`、`validation-plan`、`affected-tests` 等があります。必要ならこれらの既存実装を評価し、プロジェクト固有の機能だけを独自実装します。**すべてのツールの複製・常時実行を目標にしません。**
+
+### 今回の独自CLIとObaPickの違い
+
+- `context:pack` は静的ヒントによる**関連ファイル抜粋の生成器**です。ObaPickでいう[Context Pack（作業用メモ）](https://github.com/tomiya7688/ai-context-reducer/blob/main/docs/jp/手法/今回の作業に必要なことを短くまとめる.md)と同じ成果物ではありません。課題の目的、今回はしないこと、完了条件をまとめるには、別途Issueや引き継ぎメモが必要です。
+- 現行ツールはファイル中のコード参照、関数の呼び出し関係、動的な影響先を網羅しません。ヒントで見つからない場合はObaPickの方針に従い、既存の検索や解析ツールを使って調査範囲を広げます。
+- ベンチマークの約98%という値は**ローカルの対象ファイル全体を丸ごと渡す仮想基準**との差です。ObaPickの [固定fixtureによる実測](https://github.com/tomiya7688/ai-context-reducer/blob/main/docs/jp/AI利用/コンテキスト削減の実測ベンチマーク.md) と測定条件が違います。利用者の実際のAI使用量や品質改善と同一視しません。運用の採否は、実際の作業で必要な根拠を保持し、再読・試行錯誤・検証漏れが減ったかで判断します。
+- このCLIを使わず、`rg` 等の既存検索と短い指示だけで十分な作業なら**追加ツールを強制しません**。
+
 ## 1. Just-in-time Retrieval：必要な箇所だけ取り出す
 
 リポジトリを開いてから実行します。
