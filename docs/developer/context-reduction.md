@@ -22,7 +22,7 @@ ChatGPT、Claude、Claude Code、Codex、GitHub Copilotが、全ファイル・�
 | 開発の状況 | ObaPickの具体的な手法（原典） | Open scrapingでの適用 |
 | --- | --- | --- |
 | 「次」と依頼された | [課題一覧から一件ずつAIに進めさせる](https://github.com/tomiya7688/ai-context-reducer/blob/main/docs/jp/手法/課題一覧から一件ずつAIに進めさせる.md) | GitHub Issuesを唯一の課題一覧とする。未マージPRと依存を確認し、着手できる**一件だけ**を進める。無断で複数Issueを消化しない |
-| 変更の担当箇所が不明 | [変更内容ごとに読む場所と確認方法を一覧にする](https://github.com/tomiya7688/ai-context-reducer/blob/main/docs/jp/手法/変更内容ごとに読む場所と確認方法を一覧にする.md) | [開発ガイド](development-guide.md) のパッケージ役割表と、対応Issueの受入条件を最初の案内に使い、実際のコードとテストで確認する |
+| 変更の担当箇所が不明 | [変更内容ごとに読む場所と確認方法を一覧にする](https://github.com/tomiya7688/ai-context-reducer/blob/main/docs/jp/手法/変更内容ごとに読む場所と確認方法を一覧にする.md) | [パッケージ案内](../../packages/README.md) と [コードレビューガイド](../code-review.md) の役割表と、対応Issueの受入条件を最初の案内に使い、実際のコードとテストで確認する |
 | 大きなコードを扱う | [今回読むファイルを選ぶ](https://github.com/tomiya7688/ai-context-reducer/blob/main/docs/jp/手法/今回読むファイルを選ぶ.md) | 先に名前・文字列・関数の場所を検索。該当行の前後とテストを読み、判断できない部分だけ探索を広げる |
 | 調査が長引く | [AIに調査を止めさせる条件を決める](https://github.com/tomiya7688/ai-context-reducer/blob/main/docs/jp/手法/AIに調査を止めさせる条件を決める.md) | 「再現する条件・関係する実装・合格判定の方法」が揃えば探索を切り上げる。足りない条件だけ追加調査する |
 | PRが並行する | [複数のAIに担当と編集範囲を分けて頼む](https://github.com/tomiya7688/ai-context-reducer/blob/main/docs/jp/手法/複数のAIに担当と編集範囲を分けて頼む.md) | 契約、Core、Host、API、文書の担当と編集できるファイルを明示。別ブランチでも共有ファイルはまとめ役が順に編集する |
