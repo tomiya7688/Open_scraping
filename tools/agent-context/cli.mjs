@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createPack, corpusSize } from "./selection.mjs";
 import { createHandoff } from "./handoff.mjs";
+import { routeChanges, routingMarkdown } from "./change-router.mjs";
 import { DEFAULT_ROOT, invariantsFrom, readSource } from "./canonical.mjs";
 
 function options(args) {
@@ -66,6 +67,26 @@ async function main() {
   if (command === "benchmark") {
     if (args.length) throw Error("Benchmark takes no options");
     process.stdout.write(JSON.stringify(await benchmark(), null, 2) + "\n");
+  } else if (command === "route") {
+    const opts = options(args);
+    const allowed = new Set(["--changed", "--task", "--format"]);
+    for (const key of Object.keys(opts)) {
+      if (!allowed.has(key)) throw Error("Unknown option " + key);
+    }
+    if (!opts["--changed"]) {
+      throw Error("route requires --changed path1,path2");
+    }
+    const format = opts["--format"] ?? "markdown";
+    if (format !== "markdown" && format !== "json") {
+      throw Error("route --format must be markdown or json");
+    }
+    const plan = await routeChanges({
+      changedPaths: opts["--changed"].split(","),
+      task: opts["--task"] ?? ""
+    });
+    process.stdout.write(format === "json"
+      ? JSON.stringify(plan, null, 2) + "\n"
+      : routingMarkdown(plan));
   } else if (command === "pack") {
     const opts = options(args);
     const allowed = new Set(["--task", "--task-file", "--changed", "--max-files", "--limit-bytes", "--issue", "--ref"]);
@@ -90,7 +111,7 @@ async function main() {
     const report = await createHandoff({ data });
     process.stdout.write(report.markdown);
   } else {
-    throw Error("Usage: node tools/agent-context/cli.mjs <pack|handoff|benchmark> [options]");
+    throw Error("Usage: node tools/agent-context/cli.mjs <route|pack|handoff|benchmark> [options]");
   }
 }
 
