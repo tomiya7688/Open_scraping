@@ -1,0 +1,39 @@
+{
+  "schema_version": "1",
+  "issue": "#76",
+  "pr": "まだ作成されていない（例）",
+  "branch": "feat/issue-76-ai-context-reduction",
+  "base": "docs/ai-agent-common-instructions (PR #73)",
+  "goal": "タスク別資料選択と不変条件を保ったAI作業引き継ぎを実現",
+  "acceptance": [
+    "タスクに必要なコードと資料が選択される",
+    "重要規約を逐語で保持する",
+    "テストの実行有無・証拠を区別する"
+  ],
+  "changes": [
+    {
+      "path": "tools/agent-context/selection.mjs",
+      "summary": "資料候補の選択・抜粋"
+    },
+    {
+      "path": "tools/agent-context/handoff.mjs",
+      "summary": "構造化した引き継ぎ文書の生成"
+    }
+  ],
+  "tests": [
+    {
+      "command": "npm run verify",
+      "result": "not_run",
+      "reason": "このファイルはテンプレート。結果を観測する前に成功とは書かない"
+    }
+  ],
+  "blockers": [
+    "PR #73はmainに未マージの可能性があるため状態を確認する"
+  ],
+  "dependencies": [
+    "https://github.com/tomiya7688/Open_scraping/pull/73"
+  ],
+  "next_actions": [
+    "実際のテスト実行結果を入力してPRに記録する"
+  ]
+}

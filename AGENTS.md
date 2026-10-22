@@ -80,3 +80,15 @@ npm run verify
 - When changing contracts or behavior, update the relevant docs, examples, and tests together. Mark features as implemented, PR-only, planned, or unsupported as appropriate.
 - On completion, report: **changed paths**, Issue/PR and branch, tests actually run and their outcomes, remaining risks/dependencies, and whether the change has been merged. Include direct review links if available.
 - For chat-only ChatGPT or Claude usage, repository instructions are **not automatically loaded** merely because this file exists. See the [cross-tool handoff guide](docs/developer/ai-collaboration.md).
+
+## 7. Keeping AI context small without losing required rules
+
+- Before delegating a substantial task, **read the actual Issue/PR**. When the changed files are known and the impact is unclear, run `npm run context:route -- --changed path/to/file.ts` to see candidate dependencies, reading targets and tests. Optionally run `npm run context:pack -- --task "task description" --changed path/to/file.ts` to retrieve targeted evidence. Both are **advisory**: inspect full source and the actual diff before editing; neither command executes tests or proves scope.
+- `AGENTS.md` is the canonical source. Every generated pack/handoff includes the entire **Section 2 invariants** verbatim and SHA-256 hashes; never summarize, edit, or omit those constraints to save tokens.
+- For agent-to-agent handoffs, use `npm run context:handoff -- --input progress.json` and record Issue, PR, branch, base, changed files, acceptance, measured tests, tests not run, blockers and next actions. A `passed` test must include observable evidence; never invent success.
+- Use `npm run context:benchmark` or `npm run check:context` for deterministic source-recall and byte-reduction checks. The character/4 proxy is not a model token counter, and passing tests do not prove semantic correctness of an AI answer.
+- Tools are local and offline. They never read chat history, silently fetch GitHub state, or upload source to model providers; users must explicitly provide desired inputs and check present branch/PR status.
+- The source methodology is **[ObaPick (ai-context-reducer)](https://github.com/tomiya7688/ai-context-reducer)**, maintained by the same GitHub owner. For named methodologies, first check the owner's repository instead of inventing a similarly named tool or picking an external namesake.
+- Choose methods **based on recurring problems**: search before opening full files, use existing task/change routing, stop exploration once actionable evidence is available, and expand tests for shared contracts. When the user says "次", work on only one eligible GitHub Issue after checking dependent PRs and the previous task.
+- The optional local context CLI is a partial evidence helper, not an implementation of the entire ObaPick methodology. Do not force it on simple tasks or treat its corpus-byte comparison as measured LLM-token savings.
+- Details, limitations and examples: [Context Reduction guide](docs/developer/context-reduction.md). This tooling is for development support, **not a Core feature or a substitute for human review**.
