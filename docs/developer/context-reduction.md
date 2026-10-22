@@ -39,6 +39,32 @@ ObaPickが提供する [補助ツール対応表](https://github.com/tomiya7688/
 - ベンチマークの約98%という値は**ローカルの対象ファイル全体を丸ごと渡す仮想基準**との差です。ObaPickの [固定fixtureによる実測](https://github.com/tomiya7688/ai-context-reducer/blob/main/docs/jp/AI利用/コンテキスト削減の実測ベンチマーク.md) と測定条件が違います。利用者の実際のAI使用量や品質改善と同一視しません。運用の採否は、実際の作業で必要な根拠を保持し、再読・試行錯誤・検証漏れが減ったかで判断します。
 - このCLIを使わず、`rg` 等の既存検索と短い指示だけで十分な作業なら**追加ツールを強制しません**。
 
+## 変更別ルーティング：Open scraping専用ツール
+
+ObaPickの [Change Routing Map](https://github.com/tomiya7688/ai-context-reducer/blob/main/docs/jp/手法/変更内容ごとに読む場所と確認方法を一覧にする.md) と [Change Impact Routing](https://github.com/tomiya7688/ai-context-reducer/blob/main/docs/jp/手法/変更の影響から実行するテストを決める.md) を、Open scraping の npm workspaces に合わせて補助する **`context:route`** を用意しています。
+
+```bash
+# 変更したファイルから、最初に読む原本・関連テスト・確認すべき設計境界を提示
+npm run context:route -- --changed packages/contracts/src/validator.ts
+
+# CIや別のAIに渡す機械可読な形式（JSON）。テスト実行はしない
+npm run context:route -- --changed packages/core/src/execution.ts,packages/host/src/registry.ts --task "停止とbindingの変更" --format json
+
+# その後、必要に応じて抜粋パックを作る
+npm run context:pack -- --task "変更の目的" --changed packages/core/src/execution.ts
+```
+
+このルーターは `package.json` の現行workspace依存宣言を読み、変更したパッケージと **逆依存するworkspace** のテストを候補に挙げます。実際に存在する `test/*.test.mjs` と、移動後の `docs/developer/`（移動前は `docs/`）を確認して候補を出します。そのため、ソースファイルが分割されたPR #71のような変更でも、固定された実装ファイル名だけに依存しません。
+
+- **候補のみ**：提案はテスト実行結果でも、変更の影響範囲の完全な証明でもありません。元のIssue、実際のdiff、コードやテストを開き直して判断します。
+- **テスト未提供を警告**：型チェックしかないCLI/GUIなどでは、型チェックを機能テストとして扱いません。
+- **未存在・未対応を明示**：新規ファイル/削除ファイルやルール外の変更は、検証済みと見なさず追加調査を要求します。
+- **設計境界をチェック**：Contractsの後方互換性、Coreの具体処理禁止、Hostの権限境界、UIの公開API依存、OSレベル非常停止の個別受入確認を提示します。
+- **完全オフライン**：ファイルを解析して案内を生成するだけで、CI・GitHub・外部LLMへアクセスしません。
+- **初期の候補から不足すれば調査を広げる**：見つけたファイルやテストだけで十分だと決めつけません。特に共有契約・API・Coreを変更した場合は最終的に `npm run verify` を行います。
+
+補助コマンドを増やすこと自体が目的ではありません。変更対象が既に明確な小規模修正は、直接該当ファイルとテストを読めば十分です。
+
 ## 1. Just-in-time Retrieval：必要な箇所だけ取り出す
 
 リポジトリを開いてから実行します。
