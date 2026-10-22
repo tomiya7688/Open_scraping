@@ -22,7 +22,8 @@
     "context:pack": "node tools/agent-context/cli.mjs pack",
     "context:handoff": "node tools/agent-context/cli.mjs handoff",
     "context:benchmark": "node tools/agent-context/cli.mjs benchmark",
-    "check:context": "node --test tools/agent-context/test/*.test.mjs && node tools/agent-context/cli.mjs benchmark"
+    "check:context": "node --test tools/agent-context/test/*.test.mjs && node tools/agent-context/cli.mjs benchmark",
+    "context:route": "node tools/agent-context/cli.mjs route"
   },
   "devDependencies": {
     "typescript": "7.0.2",
