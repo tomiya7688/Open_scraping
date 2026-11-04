@@ -34,6 +34,10 @@
 
 この機能はFlowConfigのノードや取り外し可能な部品ではなく、コア／ランタイムの不変条件。プラグイン、標準構成、派生ソフトから無効化・横取りできない。詳細は[グローバル非常停止](emergency-stop.md)を参照する。
 
+## 実装コードを読む場合
+
+設計文書より先にコードレビューを行う場合は、[コードレビューガイド](code-review.md)から開始してください。現在の実装範囲、読む順番、アーキテクチャ不変条件、テスト対応をまとめています。
+
 ## 文書
 
 | 文書 | 内容 |
@@ -51,6 +55,7 @@
 | [最小収集フロー例](examples/site-search.json) | 検索・取得・保存・出力の部品を接続する構成 |
 | [入力支援・選別付きの例](examples/site-search-with-extensions.json) | 同じフロー形式に任意の解釈・選別ノードを追加 |
 | [Webを使わない処理の例](examples/local-processing.json) | ブラウザ・検索部品なしで自作処理を接続する契約例 |
+| [Webデータ抽出研究](research/web-extraction-methods.md) | wrapper induction、DOM/tree alignment、本文抽出、table、学習型・視覚型などの採用方針 |
 | [参考資料](references.md) | 技術候補の一次資料。採用・実装の保証ではない |
 
 ## この改訂で訂正したこと
