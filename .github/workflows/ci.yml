@@ -27,3 +27,4 @@ jobs:
           node-version: 24.21.0
       - run: npm install
       - run: npm run verify
+      - run: node scripts/check-reliability-design.mjs
