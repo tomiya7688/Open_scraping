@@ -405,3 +405,56 @@ test("snapshot and restore preserve remaining interval, budget and window histor
   assert.equal(granted, true);
   next.release();
 });
+
+test("restore refuses unreconciled in-flight leases and malformed counters without erasing prior policies", async () => {
+  const clock = new FakeClock();
+  const source = schedulerWith(clock);
+  source.set_policy("source", {
+    min_start_interval_ms: 500,
+    max_in_flight: 1,
+    budget_limit: 5
+  });
+  const lease = await source.acquire({
+    request_id: "acquired",
+    resource_keys: ["source"],
+    budget_costs: { source: 2 }
+  });
+
+  const restored = schedulerWith(new FakeClock());
+  restored.set_policy("existing", {
+    min_start_interval_ms: 100,
+    max_in_flight: 1
+  });
+  const original = restored.snapshot();
+
+  const active = source.snapshot();
+  assert.equal(active.resources.source.in_flight, 1);
+  assert.throws(
+    () => restored.restore(active),
+    /unreconciled active leases/
+  );
+  assert.deepEqual(restored.snapshot(), original);
+
+  lease.release();
+  const saved = source.snapshot();
+
+  const negativeBudget = structuredClone(saved);
+  negativeBudget.resources.source.budget_used = -1;
+  assert.throws(
+    () => restored.restore(negativeBudget),
+    /invalid scheduler resource counters/
+  );
+  assert.deepEqual(restored.snapshot(), original);
+
+  const invalidHistory = structuredClone(saved);
+  invalidHistory.resources.source.start_times_epoch_ms = [20, 10];
+  assert.throws(
+    () => restored.restore(invalidHistory),
+    /invalid scheduler resource counters/
+  );
+  assert.deepEqual(restored.snapshot(), original);
+
+  restored.restore(saved);
+  assert.equal(restored.snapshot().resources.source.budget_used, 2);
+  assert.equal(restored.get_policy("existing"), undefined);
+});
