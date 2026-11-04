@@ -99,4 +99,4 @@
 
 **評価ベースライン後に確定**：フィールドごとの最低precision/recall、主観的選別の誤除外許容、速度と精度のtradeoff、評価セットのOS/ブラウザ別範囲。これらを実行結果を見て都合良く変更せず、fixture版とベースラインを先に固定する。
 
-実装Issue：[#84](https://github.com/tomiya7688/Open_scraping/issues/84)。関連するComponentとテストは[#15](https://github.com/tomiya7688/Open_scraping/issues/15)、[#54](https://github.com/tomiya7688/Open_scraping/issues/54)、[#69](https://github.com/tomiya7688/Open_scraping/issues/69)で管理。**
+実装Issue：[#84](https://github.com/tomiya7688/Open_scraping/issues/84)。関連するComponentとテストは[#15](https://github.com/tomiya7688/Open_scraping/issues/15)、[#54](https://github.com/tomiya7688/Open_scraping/issues/54)、[#69](https://github.com/tomiya7688/Open_scraping/issues/69)で管理。
