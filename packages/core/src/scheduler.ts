@@ -430,11 +430,43 @@ export class SharedScheduler {
       throw new Error("scheduler state can only be restored while idle");
     }
 
+    // Persisted snapshots can be corrupted or out of date. Validate all
+    // resources before modifying live state, so an invalid later resource
+    // cannot erase valid policies that are already installed.
+    if (!Number.isFinite(snapshot.captured_at_epoch_ms) ||
+        snapshot.resources === null ||
+        typeof snapshot.resources !== "object" ||
+        Array.isArray(snapshot.resources)) {
+      throw new Error("invalid scheduler snapshot metadata");
+    }
+    const savedResources = Object.entries(snapshot.resources);
+    for (const [key, saved] of savedResources) {
+      if (!key || !saved || typeof saved !== "object") {
+        throw new Error("invalid scheduler resource snapshot");
+      }
+      validatePolicy(saved.policy);
+      // A new process has no lease handles for the old in-flight operations.
+      // Restoring a nonzero count would block forever, or tempt a caller to
+      // reset the count and accidentally duplicate an external side effect.
+      if (saved.in_flight !== 0) {
+        throw new Error("scheduler snapshot has unreconciled active leases");
+      }
+      if (!Number.isFinite(saved.budget_used) || saved.budget_used < 0 ||
+          !Array.isArray(saved.start_times_epoch_ms) ||
+          saved.start_times_epoch_ms.some((time) => !Number.isFinite(time)) ||
+          saved.start_times_epoch_ms.some((time, i, all) =>
+            i > 0 && time < all[i - 1]!) ||
+          (saved.next_start_not_before_epoch_ms !== undefined &&
+            !Number.isFinite(saved.next_start_not_before_epoch_ms))) {
+        throw new Error("invalid scheduler resource counters or timestamps");
+      }
+    }
+
     const monoNow = this.#clock.monotonic_now_ms();
     const wallNow = this.#clock.wall_now_ms();
     this.#resources.clear();
 
-    for (const [key, saved] of Object.entries(snapshot.resources)) {
+    for (const [key, saved] of savedResources) {
       validatePolicy(saved.policy);
 
       const history = saved.start_times_epoch_ms.map((epoch) => {
