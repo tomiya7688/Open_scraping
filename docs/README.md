@@ -38,6 +38,16 @@
 
 設計文書より先にコードレビューを行う場合は、[コードレビューガイド](code-review.md)から開始してください。現在の実装範囲、読む順番、アーキテクチャ不変条件、テスト対応をまとめています。
 
+## 精度・取得量・利用者セキュリティの技術設計
+
+- [横断設計の入口](developer/reliability/README.md)：設計の決定・未決定と実装順序
+- [実装可能なモジュール構成とRun処理順序](developer/reliability/implementation-blueprint.md)
+- [版付きデータ・権限・Operation契約案](developer/reliability/contract-model.md)
+- [通信先検証・OS隔離・秘密管理・非常停止の強制設計](developer/reliability/security-enforcement.md)
+- [精度・1万件負荷・敵対的入力の検証プロトコル](developer/reliability/verification-protocol.md)
+
+これらは **実装・実機検証前の技術設計**。仕様を決めるための文書であり、機能が動作済み・セキュリティ検証済みという意味ではありません。開発者向け文書分割PR #72がマージされた場合は、その索引にも追加する。
+
 ## 文書
 
 | 文書 | 内容 |
