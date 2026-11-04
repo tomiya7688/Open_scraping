@@ -66,34 +66,60 @@ export class SqliteRunStateStore implements RunStateStore {
 
   async save_snapshot(snapshot: RunJournalSnapshot): Promise<void> {
     const db = this.#requireDb();
-    const existing = db
-      .prepare(
-        "SELECT generation FROM run_snapshots WHERE run_id = ?"
-      )
-      .get(snapshot.run_id) as { generation: number } | undefined;
-
-    if (
-      existing !== undefined &&
-      existing.generation > snapshot.generation
-    ) {
-      throw new Error(
-        `refusing to overwrite generation ${existing.generation} with stale generation ${snapshot.generation}`
-      );
+    if (!snapshot.run_id || !Number.isSafeInteger(snapshot.generation) ||
+        snapshot.generation < 0 || !Number.isFinite(Date.parse(snapshot.updated_at))) {
+      throw new Error("invalid run journal snapshot identity or generation");
     }
 
-    db.prepare(`
-      INSERT INTO run_snapshots(run_id, generation, updated_at, snapshot_json)
-      VALUES (?, ?, ?, ?)
-      ON CONFLICT(run_id) DO UPDATE SET
-        generation = excluded.generation,
-        updated_at = excluded.updated_at,
-        snapshot_json = excluded.snapshot_json
-    `).run(
-      snapshot.run_id,
-      snapshot.generation,
-      snapshot.updated_at,
-      JSON.stringify(snapshot)
-    );
+    // The generation check and write must be one SQLite transaction, including
+    // when multiple host processes open the same state database.
+    db.exec("BEGIN IMMEDIATE");
+    try {
+      const existing = db
+        .prepare(
+          "SELECT generation, updated_at, snapshot_json FROM run_snapshots WHERE run_id = ?"
+        )
+        .get(snapshot.run_id) as {
+          generation: number;
+          updated_at: string;
+          snapshot_json: string;
+        } | undefined;
+      const serialized = JSON.stringify(snapshot);
+
+      if (existing !== undefined) {
+        if (existing.generation > snapshot.generation) {
+          throw new Error(
+            `refusing to overwrite generation ${existing.generation} with stale generation ${snapshot.generation}`
+          );
+        }
+        if (existing.generation === snapshot.generation) {
+          const previous = Date.parse(existing.updated_at);
+          const next = Date.parse(snapshot.updated_at);
+          if (!Number.isFinite(previous) || next < previous ||
+              (next === previous && existing.snapshot_json !== serialized)) {
+            throw new Error("refusing stale or conflicting snapshot within a generation");
+          }
+        }
+      }
+
+      db.prepare(`
+        INSERT INTO run_snapshots(run_id, generation, updated_at, snapshot_json)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(run_id) DO UPDATE SET
+          generation = excluded.generation,
+          updated_at = excluded.updated_at,
+          snapshot_json = excluded.snapshot_json
+      `).run(
+        snapshot.run_id,
+        snapshot.generation,
+        snapshot.updated_at,
+        serialized
+      );
+      db.exec("COMMIT");
+    } catch (error) {
+      db.exec("ROLLBACK");
+      throw error;
+    }
   }
 
   async append_event(event: RunJournalEvent): Promise<number> {
@@ -107,12 +133,12 @@ export class SqliteRunStateStore implements RunStateStore {
         )
         .get(event.run_id) as { generation: number } | undefined;
 
-      if (
-        current !== undefined &&
-        event.generation < current.generation
-      ) {
+      if (current === undefined) {
+        throw new Error("cannot append an event before the run snapshot is created");
+      }
+      if (event.generation !== current.generation) {
         throw new Error(
-          `stale generation event ${event.generation}; current generation is ${current.generation}`
+          `${event.generation < current.generation ? "stale" : "future"} generation event ${event.generation}; current generation is ${current.generation}`
         );
       }
 
