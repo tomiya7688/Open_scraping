@@ -62,6 +62,12 @@ for (const [index, gate] of (Array.isArray(gates.entries) ? gates.entries : []).
     gate.required_for.every((scope) => validScopes.has(scope)),
   id + ": required_for must contain known scopes");
   check(validStatuses.has(gate.status), id + ": invalid status");
+  const recommendedDesign = id[0] === "S" ? "security-enforcement.md"
+    : id[0] === "Q" ? "accuracy-coverage.md" : "volume-runtime.md";
+  check(gate.design_ref === "docs/developer/reliability/" + recommendedDesign,
+    id + ": design_ref must point to the correct design document");
+  check(gate.verification_ref === "docs/developer/reliability/verification-protocol.md",
+    id + ": verification_ref must point to the reproducible verification protocol");
   check(Array.isArray(gate.evidence), id + ": evidence must be an array");
   if (validStatuses.has(gate.status)) counts[gate.status] += 1;
   if (["verified", "failed", "not_applicable"].includes(gate.status)) {
@@ -95,7 +101,12 @@ for (const [path, expected] of [
   ["docs/developer/reliability/security-threat-model.md", ["SSRF", "sandbox", "#78"]],
   ["docs/developer/reliability/accuracy-coverage.md", ["precision", "recall", "DataRef"]],
   ["docs/developer/reliability/volume-runtime.md", ["backpressure", "checkpoint", "Retry-After"]],
-  ["docs/developer/reliability/acceptance.md", ["planned", "verified", "not_applicable"]]
+  ["docs/developer/reliability/acceptance.md", ["planned", "verified", "not_applicable"]],
+  ["docs/developer/reliability/implementation-blueprint.md", ["Run", "SecurityBroker", "Core"]],
+  ["docs/developer/reliability/contract-model.md", ["RunLaunchPolicy", "FieldObservation", "FetchAttempt"]],
+  ["docs/developer/reliability/security-enforcement.md", ["NetworkGate", "SandboxLauncher", "DNS"]],
+  ["docs/developer/reliability/verification-protocol.md", ["fixture", "precision", "recall"]],
+  ["docs/developer/reliability/decisions.md", ["D01", "O01", "未決定"]]
 ]) {
   try {
     const file = await readFile(new URL(path, root), "utf8");

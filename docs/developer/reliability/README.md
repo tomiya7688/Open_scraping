@@ -10,6 +10,16 @@
 
 セキュリティは単に「禁止サイト」の一覧を作ることではない。**どの対象・方法で取得するかはユーザーが選び、どのOS権限・秘密・通信先・容量にアクセスするかをHost等が明示的に認可する。** コアは内容を分類する安全フィルターを追加せず、設計済みの唯一の非着脱安全プリミティブとして[グローバル非常停止](../../emergency-stop.md)を保持する。セキュリティの実効制御はHost、OS隔離、通信adapter、保存／出力境界に置く。
 
+## 実装レベルの技術設計（今回追加）
+
+1. [実装可能な統合設計](implementation-blueprint.md) — モジュール責務、Run開始から保存・出力までの順序、停止時の状態遷移、実装順序
+2. [契約とデータモデル](contract-model.md) — 現行Wire型との区別、RunLaunchPolicy、FieldObservation、FetchAttempt、Collection/Exportの版付き型案
+3. [セキュリティ強制の技術設計](security-enforcement.md) — NetworkGateのIP固定／DNS rebinding防御、OS worker sandbox、secret、非常停止の実行経路
+4. [再現可能な検証プロトコル](verification-protocol.md) — Fixture、精度の計算式、100/1,000/10,000件負荷試験、16件の敵対的セキュリティテスト
+5. [設計決定・未決定事項](decisions.md) — 既存確定事項、提案事項、検証待ちの区別と採用理由
+
+既存の各設計書は対象軸の要件整理、新しい技術設計書はその実装方法と受入シーケンスを記述する。Issueは作業の管理場所であり、**技術仕様の正本をIssue本文に重複させない**。
+
 ## ここから読む
 
 | 対象 | 仕様案 | 主な関連Issue |
