@@ -103,4 +103,4 @@ Discovery / source adapters ── bounded candidate queue ──► Fetch
 - 性能改善時、raw source・観測・来歴の必要な情報を削除して計算量を減らした場合は、品質の後退として評価。省略することをユーザーに表示する。
 - データの品質フィルターは利用者の選択する外部部品。スループットのためにCoreへ推奨・採否ロジックを追加しない。
 
-実装・負荷検証は [#85](https://github.com/tomiya7688/Open_scraping/issues/85)。関連する scheduler[#9](https://github.com/tomiya7688/Open_scraping/issues/9)、run journal[#10](https://github.com/tomiya7688/Open_scraping/issues/10)、download[#25](https://github.com/tomiya7688/Open_scraping/issues/25)、store[#26](https://github.com/tomiya7688/Open_scraping/issues/26) に接続する。**
+実装・負荷検証は [#85](https://github.com/tomiya7688/Open_scraping/issues/85)。関連する scheduler[#9](https://github.com/tomiya7688/Open_scraping/issues/9)、run journal[#10](https://github.com/tomiya7688/Open_scraping/issues/10)、download[#25](https://github.com/tomiya7688/Open_scraping/issues/25)、store[#26](https://github.com/tomiya7688/Open_scraping/issues/26) に接続する。
