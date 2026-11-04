@@ -193,3 +193,58 @@ test("fault injection after an earlier save never removes the successful record"
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test("SQLite rejects same-generation rollback and orphaned future events", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "open-scraping-rollback-"));
+  const path = join(dir, "run-journal.sqlite");
+  const store = new SqliteRunStateStore({ path });
+
+  try {
+    await store.open();
+
+    const event = (generation) => ({
+      run_id: "run-sqlite",
+      generation,
+      event_type: "operation.progress",
+      recorded_at: "2026-09-28T00:00:04Z",
+      payload: { node_id: "save" }
+    });
+    await assert.rejects(
+      store.append_event(event(1)),
+      /before the run snapshot is created/
+    );
+
+    const earlier = snapshot(1);
+    await store.save_snapshot(earlier);
+
+    const newer = structuredClone(earlier);
+    newer.updated_at = "2026-09-28T00:00:04Z";
+    newer.nodes.save.outputs.collection = "newer-collection";
+    await store.save_snapshot(newer);
+
+    await assert.rejects(
+      store.save_snapshot(earlier),
+      /stale or conflicting snapshot/
+    );
+
+    const conflict = structuredClone(newer);
+    conflict.nodes.save.outputs.collection = "conflicting-collection";
+    await assert.rejects(
+      store.save_snapshot(conflict),
+      /stale or conflicting snapshot/
+    );
+
+    await assert.rejects(
+      store.append_event(event(2)),
+      /future generation event/
+    );
+    assert.equal(await store.append_event(event(1)), 1);
+
+    const read = await store.load_run("run-sqlite");
+    assert.equal(read.snapshot.nodes.save.outputs.collection, "newer-collection");
+    assert.equal(read.events.length, 1);
+  } finally {
+    store.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
