@@ -16,8 +16,9 @@
     "check:boundaries": "node scripts/check-boundaries.mjs",
     "check:docs": "node scripts/check-docs.mjs",
     "test:prototype": "node prototypes/adr-0001-stdio-component/host.mjs",
-    "test": "npm run check:boundaries && npm run check:docs && npm run test:prototype && npm run test --workspaces --if-present",
-    "verify": "npm run typecheck && npm test"
+    "test": "npm run check:boundaries && npm run check:docs && npm run test:prototype && npm run test --workspaces --if-present && npm run test:text-origin",
+    "verify": "npm run typecheck && npm test",
+    "test:text-origin": "npm run build --workspace @open-scraping/contracts && npm run build --workspace @open-scraping/core && npm run build --workspace @open-scraping/host && node --test components/ai-text-origin-filter/test/filter.test.mjs"
   },
   "devDependencies": {
     "typescript": "7.0.2",
