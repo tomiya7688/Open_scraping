@@ -116,9 +116,14 @@ process.stdin.on("data", (chunk) => {
       if (split > MAX_HEADER_BYTES) badFrame();
       const header = buffer.subarray(0, split).toString("ascii");
       buffer = buffer.subarray(split + 4);
-      const match = /^Content-Length:\s*(\d+)\s*$/i.exec(header);
-      if (!match) badFrame();
-      expectedBytes = Number(match[1]);
+      // The Host sends Content-Length plus Content-Type on separate lines.
+      // Parse header fields, not the whole multi-line header as one value.
+      const headers = header.split("\r\n");
+      const lengths = headers
+        .filter((line) => /^Content-Length:/i.test(line))
+        .map((line) => /^Content-Length:\s*(\d+)\s*$/i.exec(line));
+      if (lengths.length !== 1 || !lengths[0]) badFrame();
+      expectedBytes = Number(lengths[0][1]);
       if (!Number.isSafeInteger(expectedBytes) ||
           expectedBytes < 1 || expectedBytes > MAX_FRAME_BYTES) badFrame();
     }
