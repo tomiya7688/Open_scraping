@@ -1,0 +1,71 @@
+{
+  "schema_version": "0.1",
+  "kind": "component-manifest",
+  "id": "open-scraping.ai-text-origin-filter",
+  "version": "0.1.0",
+  "protocol": {
+    "name": "open-scraping.component-rpc",
+    "version": "1"
+  },
+  "contracts": [
+    {
+      "id": "open-scraping.ai-text-origin-filter/v1",
+      "capabilities": [
+        "text_origin_assessment"
+      ],
+      "operations": [
+        {
+          "name": "assess",
+          "inputs": {
+            "text": {
+              "type": "open-scraping.text/v1",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "maxLength": 262144
+              }
+            },
+            "manual_labels": {
+              "type": "open-scraping.manual-origin-labels/v1",
+              "required": false
+            },
+            "source_claims": {
+              "type": "open-scraping.origin-claims/v1",
+              "required": false
+            },
+            "detector": {
+              "type": "open-scraping.detector-score/v1",
+              "required": false
+            },
+            "policy": {
+              "type": "open-scraping.origin-selection-policy/v1",
+              "required": false
+            }
+          },
+          "outputs": {
+            "assessment": {
+              "type": "open-scraping.text-origin-assessment/v1",
+              "required": true
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "settings_schema": {
+    "type": "object",
+    "additionalProperties": false
+  },
+  "permissions": [],
+  "cancellation": {
+    "mode": "cooperative",
+    "grace_ms": 100
+  },
+  "runtime": {
+    "transport": "stdio-jsonrpc",
+    "command": "node",
+    "args": [
+      "worker.mjs"
+    ]
+  }
+}
