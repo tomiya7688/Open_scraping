@@ -1,0 +1,458 @@
+{
+  "schema_version": "0.1-design",
+  "kind": "reliability-acceptance-gates",
+  "as_of": "2026-11-04",
+  "status_note": "Every entry is planned; no implementation or real-world security coverage is asserted",
+  "entries": [
+    {
+      "id": "S01",
+      "dimension": "security",
+      "gate": "security-blocking",
+      "issue": 11,
+      "verification": "adversarial_fixture",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "localhost API requires auth, valid Host and explicit allowed Origin",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/security-enforcement.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "S02",
+      "dimension": "security",
+      "gate": "security-blocking",
+      "issue": 82,
+      "verification": "adversarial_fixture",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "redirect to loopback or metadata destination cannot bypass destination validation",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/security-enforcement.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "S03",
+      "dimension": "security",
+      "gate": "security-blocking",
+      "issue": 82,
+      "verification": "adversarial_fixture",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "DNS rebinding, IPv4/v6 and proxy cannot change the validated connected address",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/security-enforcement.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "S04",
+      "dimension": "security",
+      "gate": "security-blocking",
+      "issue": 62,
+      "verification": "adversarial_fixture",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "credentials cannot cross authorized site, run, or component boundaries",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/security-enforcement.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "S05",
+      "dimension": "security",
+      "gate": "security-blocking",
+      "issue": 83,
+      "verification": "os_integration",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "untrusted worker cannot read ungranted filesystem, env, network, or processes",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/security-enforcement.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "S06",
+      "dimension": "security",
+      "gate": "security-blocking",
+      "issue": 83,
+      "verification": "adversarial_fixture",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "zip-slip, symlink traversal and expansion bombs cannot escape quotas or storage root",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/security-enforcement.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "S07",
+      "dimension": "security",
+      "gate": "security-blocking",
+      "issue": 86,
+      "verification": "adversarial_fixture",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "untrusted content cannot be promoted to host or agent instructions",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/security-enforcement.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "S08",
+      "dimension": "security",
+      "gate": "security-blocking",
+      "issue": 83,
+      "verification": "adversarial_fixture",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "raw secrets cannot leak to logs, exports, diagnostics or cross-run records",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/security-enforcement.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "S09",
+      "dimension": "security",
+      "gate": "security-blocking",
+      "issue": 6,
+      "verification": "integration",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "component implementation version, manifest digest and permissions stay pinned",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/security-enforcement.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "S10",
+      "dimension": "security",
+      "gate": "security-blocking",
+      "issue": 42,
+      "verification": "os_integration",
+      "required_for": [
+        "automation"
+      ],
+      "assertion": "foreground-independent Esc and physical mouse must be armed before automation",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/security-enforcement.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "S11",
+      "dimension": "security",
+      "gate": "security-blocking",
+      "issue": 10,
+      "verification": "integration",
+      "required_for": [
+        "automation"
+      ],
+      "assertion": "late old-generation results cannot override cancelled or recovered states",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/security-enforcement.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "S12",
+      "dimension": "security",
+      "gate": "security-blocking",
+      "issue": 83,
+      "verification": "adversarial_fixture",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "cross-run DataRef, path and stored data reads are denied",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/security-enforcement.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "S13",
+      "dimension": "security",
+      "gate": "security-blocking",
+      "issue": 85,
+      "verification": "integration",
+      "required_for": [
+        "automation"
+      ],
+      "assertion": "memory, CPU, disk, transfer and retry quotas cannot be bypassed",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/security-enforcement.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "S14",
+      "dimension": "security",
+      "gate": "security-blocking",
+      "issue": 78,
+      "verification": "release",
+      "required_for": [
+        "distribution"
+      ],
+      "assertion": "the final distributed artifact has verified signature or attestation",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/security-enforcement.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "S15",
+      "dimension": "security",
+      "gate": "security-blocking",
+      "issue": 83,
+      "verification": "adversarial_fixture",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "CSV formula, HTML and archive exports do not execute untrusted input",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/security-enforcement.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "S16",
+      "dimension": "security",
+      "gate": "security-blocking",
+      "issue": 82,
+      "verification": "adversarial_fixture",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "unobservable browser/network path is not claimed to be protected",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/security-enforcement.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "Q01",
+      "dimension": "quality",
+      "gate": "quality-required",
+      "issue": 84,
+      "verification": "integration",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "discovered, attempted, complete, committed, unique, selected, exported counts differ correctly",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/accuracy-coverage.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "Q02",
+      "dimension": "quality",
+      "gate": "quality-required",
+      "issue": 15,
+      "verification": "integration",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "every reported field has observation status, timestamp, original source locator and transform version",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/accuracy-coverage.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "Q03",
+      "dimension": "quality",
+      "gate": "quality-required",
+      "issue": 84,
+      "verification": "integration",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "unknown, missing, partial, not-observed and conflict never become successful known values",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/accuracy-coverage.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "Q04",
+      "dimension": "quality",
+      "gate": "quality-required",
+      "issue": 84,
+      "verification": "adversarial_fixture",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "conflicting source values are retained with independent evidence",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/accuracy-coverage.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "Q05",
+      "dimension": "quality",
+      "gate": "quality-required",
+      "issue": 54,
+      "verification": "benchmark",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "per-field precision and recall are measured on fixed licensed fixture sets",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/accuracy-coverage.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "Q06",
+      "dimension": "quality",
+      "gate": "quality-required",
+      "issue": 84,
+      "verification": "benchmark",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "near-duplicates and variant identity false merges are separately measured",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/accuracy-coverage.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "Q07",
+      "dimension": "quality",
+      "gate": "quality-required",
+      "issue": 84,
+      "verification": "benchmark",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "extraction quality by volume bucket and by source type is reported",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/accuracy-coverage.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "Q08",
+      "dimension": "quality",
+      "gate": "quality-required",
+      "issue": 15,
+      "verification": "integration",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "raw fetch-store-export works with no content filter or ranking node",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/accuracy-coverage.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "V01",
+      "dimension": "volume",
+      "gate": "scale-required",
+      "issue": 85,
+      "verification": "integration",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "all pipeline stages have bounded queues and propagate backpressure upstream",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/volume-runtime.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "V02",
+      "dimension": "volume",
+      "gate": "scale-required",
+      "issue": 9,
+      "verification": "integration",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "real network requests honor shared scheduler and inherited leases",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/volume-runtime.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "V03",
+      "dimension": "volume",
+      "gate": "scale-required",
+      "issue": 25,
+      "verification": "integration",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "finite retries and Retry-After do not bypass budgets or user source selection",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/volume-runtime.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "V04",
+      "dimension": "volume",
+      "gate": "scale-required",
+      "issue": 85,
+      "verification": "integration",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "restart does not re-count committed items, reset budgets or silently repeat side effects",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/volume-runtime.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "V05",
+      "dimension": "volume",
+      "gate": "scale-required",
+      "issue": 85,
+      "verification": "integration",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "memory, disk, CPU, bytes and concurrent work are measured and limited",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/volume-runtime.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    },
+    {
+      "id": "V06",
+      "dimension": "volume",
+      "gate": "scale-required",
+      "issue": 85,
+      "verification": "benchmark",
+      "required_for": [
+        "standard_collection"
+      ],
+      "assertion": "100, 1000 and 10000 controlled-fixture items are measured without external site load",
+      "status": "planned",
+      "evidence": [],
+      "design_ref": "docs/developer/reliability/volume-runtime.md",
+      "verification_ref": "docs/developer/reliability/verification-protocol.md"
+    }
+  ]
+}
