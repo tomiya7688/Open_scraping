@@ -27,7 +27,14 @@ async function exists(path) {
   }
 }
 
-const files = await walk(docsRoot);
+// Include both audience entry points and the repository entry README in link validation.
+const files = [
+  ...(await walk(docsRoot)),
+  resolve(root, "README.md"),
+  resolve(root, "CONTRIBUTING.md"),
+  resolve(root, ".github/pull_request_template.md"),
+  ...(await walk(resolve(root, ".github/ISSUE_TEMPLATE")))
+];
 
 for (const file of files) {
   if (extname(file) === ".json") {
