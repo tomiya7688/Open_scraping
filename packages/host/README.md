@@ -12,9 +12,12 @@ coreが「呼ぶ」だけなのに対し、hostは「どの実装を、どう起
 | ---: | --- | --- |
 | 1 | [src/registry.ts](src/registry.ts) | component登録、manifest digest、capability確認、binding解決、run使用中の取り外し防止 |
 | 2 | [src/protocol.ts](src/protocol.ts) | Content-Length framing、JSON-RPC peer、late response、worker exit |
-| 3 | [src/component-host.ts](src/component-host.ts) | worker spawn、permission、idempotency、deadline、progress、cancel、binding subcall |
-| 4 | [test/registry.test.mjs](test/registry.test.mjs) | registry / binding契約 |
-| 5 | [test/component-host.test.mjs](test/component-host.test.mjs) | worker lifecycle / cancel / crash / permission / subcall |
+| 3 | [src/host-types.ts](src/host-types.ts) | hostの公開event/optionとoperation/session型 |
+| 4 | [src/host-invocation.ts](src/host-invocation.ts) | idempotency、result生成、binding呼び出し検証 |
+| 5 | [src/worker-session.ts](src/worker-session.ts) | workerの生成、permission、初期化・所有 |
+| 6 | [src/component-host.ts](src/component-host.ts) | runごとのoperation state、deadline、progress、cancel、subcall |
+| 7 | [test/registry.test.mjs](test/registry.test.mjs) | registry / binding契約 |
+| 8 | [test/component-host.test.mjs](test/component-host.test.mjs) | worker lifecycle / cancel / crash / permission / subcall |
 
 ## 大まかな呼び出し
 
@@ -61,7 +64,7 @@ component worker
 - unknown / late response
 - child exit時にpending requestを残さないか
 
-### component-host.ts
+### component-host.ts / worker-session.ts
 
 - idempotency key衝突
 - deadlineのarm/cleanup

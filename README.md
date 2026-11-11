@@ -90,15 +90,21 @@ FlowConfig
 
 初見レビューはこの順番を推奨します。
 
-1. [packages/contracts/src/types.ts](packages/contracts/src/types.ts) — 共通データ型
-2. [packages/contracts/src/schemas.ts](packages/contracts/src/schemas.ts) — wire format
-3. [packages/contracts/src/validator.ts](packages/contracts/src/validator.ts) — 契約検証
-4. [packages/core/src/execution.ts](packages/core/src/execution.ts) — フロー実行本体
-5. [packages/host/src/registry.ts](packages/host/src/registry.ts) — component登録・binding解決
-6. [packages/host/src/protocol.ts](packages/host/src/protocol.ts) — stdio JSON-RPC framing
-7. [packages/host/src/component-host.ts](packages/host/src/component-host.ts) — worker lifecycle / invoke / cancel
-8. 対応する `test/*.test.mjs`
-9. [scripts/check-boundaries.mjs](scripts/check-boundaries.mjs) — アーキテクチャ違反検出
+1. [packages/contracts/src/types.ts](packages/contracts/src/types.ts) — wire型
+2. [packages/contracts/src/schemas.ts](packages/contracts/src/schemas.ts) — JSON Schema定義
+3. [packages/contracts/src/validation-schema.ts](packages/contracts/src/validation-schema.ts) — スキーマ検証
+4. [packages/contracts/src/validation-manifest.ts](packages/contracts/src/validation-manifest.ts) — manifest検証
+5. [packages/contracts/src/validation-bindings.ts](packages/contracts/src/validation-bindings.ts) — binding・能力照合
+6. [packages/contracts/src/validation-flow.ts](packages/contracts/src/validation-flow.ts) — node・参照・型の検証
+7. [packages/core/src/execution-plan.ts](packages/core/src/execution-plan.ts) — 実行計画
+8. [packages/core/src/reference-resolution.ts](packages/core/src/reference-resolution.ts) — 値・DataRefの配送
+9. [packages/core/src/execution.ts](packages/core/src/execution.ts) — run状態機械
+10. [packages/host/src/registry.ts](packages/host/src/registry.ts) — 部品登録と版固定
+11. [packages/host/src/protocol.ts](packages/host/src/protocol.ts) — stdioフレーミング
+12. [packages/host/src/worker-session.ts](packages/host/src/worker-session.ts) — worker起動・権限・初期化
+13. [packages/host/src/component-host.ts](packages/host/src/component-host.ts) — invoke・deadline・cancel
+14. 対応する `test/*.test.mjs`
+15. [scripts/check-boundaries.mjs](scripts/check-boundaries.mjs) — 境界検査
 
 論点別のチェックリストと「どのテストが何を保証するか」は
 **[docs/code-review.md](docs/code-review.md)** にまとめています。
